@@ -1,7 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { Avatar, type AvatarUser } from "@/components/primitives";
 import { setLocaleAction, setThemeAction } from "@/app/actions/preferences";
@@ -19,11 +20,29 @@ export default function Topbar({
   locale: Locale;
   theme: "dark" | "light";
   dict: Dictionary;
-  currentUser: AvatarUser;
+  currentUser: AvatarUser & { email?: string };
   crumbs: Crumb[];
 }) {
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (!userMenuRef.current?.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenuOpen]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -87,7 +106,46 @@ export default function Topbar({
       <button className="btn ghost icon" type="button" aria-label="Notifications">
         <Icon name="bell" size={14} />
       </button>
-      <Avatar user={currentUser} size="md" />
+      <div ref={userMenuRef} style={{ position: "relative" }}>
+        <button
+          type="button"
+          className="avatar-btn"
+          onClick={() => setUserMenuOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={userMenuOpen}
+          aria-label={currentUser.name}
+          style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer" }}
+        >
+          <Avatar user={currentUser} size="md" />
+        </button>
+        {userMenuOpen && (
+          <div className="user-menu" role="menu">
+            <div className="user-menu-head">
+              <div style={{ fontWeight: 600 }}>{currentUser.name}</div>
+              {currentUser.email && (
+                <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-3)" }}>
+                  {currentUser.email}
+                </div>
+              )}
+            </div>
+            <Link
+              href="/settings"
+              role="menuitem"
+              className="user-menu-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <Icon name="settings" size={12} />
+              <span>{locale === "ar" ? "الإعدادات" : "Settings"}</span>
+            </Link>
+            <form action="/api/auth/signout" method="post">
+              <button type="submit" role="menuitem" className="user-menu-item danger">
+                <Icon name="logout" size={12} />
+                <span>{locale === "ar" ? "تسجيل الخروج" : "Sign out"}</span>
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

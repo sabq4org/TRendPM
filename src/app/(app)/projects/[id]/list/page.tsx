@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getTasks } from "@/lib/db/queries";
@@ -12,7 +12,7 @@ export default async function ListPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 

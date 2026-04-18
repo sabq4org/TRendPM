@@ -7,7 +7,7 @@ type IconName =
   | "calendar" | "clock" | "comment" | "paperclip" | "link" | "user"
   | "flag" | "check" | "dots" | "moon" | "sun" | "bell" | "kanban" | "list"
   | "gantt" | "arrowRight" | "alert" | "archive" | "globe" | "lang" | "zap"
-  | "tag" | "trend" | "command" | "menu";
+  | "tag" | "trend" | "command" | "menu" | "logout" | "trash" | "edit" | "mail";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: <><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></>,
@@ -54,6 +54,10 @@ const paths: Record<IconName, React.ReactNode> = {
   trend: <><path d="M3 17l6-6 4 4 7-8"/><path d="M14 7h6v6"/></>,
   command: <><path d="M9 3a3 3 0 100 6h6a3 3 0 100-6v12a3 3 0 11-6 0V9a3 3 0 11-6 0 3 3 0 106 0"/></>,
   menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
+  logout: <><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></>,
+  trash: <><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6"/></>,
+  edit: <><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 7 9-7"/></>,
 };
 
 export type IconProps = {

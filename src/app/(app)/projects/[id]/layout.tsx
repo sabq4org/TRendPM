@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getProject, getProjectMembers, getTasks, statusColumnCount } from "@/lib/db/queries";
@@ -9,6 +9,7 @@ import { isLate } from "@/lib/utils";
 import type { TaskPriority } from "@/lib/db/schema";
 import TaskPanel from "@/components/task-panel";
 import TabLink from "@/components/tab-link";
+import NewTaskButton from "@/components/tasks/new-task-button";
 
 export default async function ProjectLayout({
   children,
@@ -18,7 +19,7 @@ export default async function ProjectLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
@@ -71,12 +72,16 @@ export default async function ProjectLayout({
         </span>
         <span style={{ marginInlineStart: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           <AvatarStack users={members} max={5} size="md" />
-          <button className="btn sm" type="button">
-            <Icon name="filter" size={12} /> {dict.filter}
-          </button>
-          <button className="btn primary sm" type="button">
-            <Icon name="plus" size={12} /> {dict.newTask}
-          </button>
+          <NewTaskButton
+            projectId={id}
+            assignees={members.map((m) => ({
+              id: m.id,
+              name: locale === "ar" ? m.name : m.nameEn ?? m.name,
+              initials: m.initials ?? null,
+            }))}
+            label={dict.newTask}
+            locale={locale}
+          />
         </span>
       </div>
       <div className="toolbar">

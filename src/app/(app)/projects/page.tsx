@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getProjects, getTasks } from "@/lib/db/queries";
-import { Avatar, AvatarStack, Chip, PriorityDot, Progress } from "@/components/primitives";
-import { Icon } from "@/components/icon";
+import { AvatarStack, Chip, PriorityDot, Progress } from "@/components/primitives";
 import { isLate, formatShortDate } from "@/lib/utils";
 import type { TaskPriority } from "@/lib/db/schema";
+import NewProjectButton from "@/components/projects/new-project-button";
+import ProjectRowActions from "@/components/projects/project-row-actions";
 
 export default async function ProjectsPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
@@ -31,12 +32,26 @@ export default async function ProjectsPage() {
         <h1>{dict.projects}</h1>
         <Chip>{projects.length}</Chip>
         <div style={{ marginInlineStart: "auto" }}>
-          <button className="btn primary sm" type="button">
-            <Icon name="plus" size={12} /> {dict.newProject}
-          </button>
+          <NewProjectButton label={dict.newProject} locale={locale} />
         </div>
       </div>
       <div style={{ padding: 16 }}>
+        {projects.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <h2>
+              {locale === "ar" ? "لا توجد مشاريع بعد" : "No projects yet"}
+            </h2>
+            <p>
+              {locale === "ar"
+                ? "ابدأ بإنشاء أول مشروع لفريقك، ثم أضف المهام والأعضاء."
+                : "Create your first project to start adding tasks and team members."}
+            </p>
+            <div style={{ marginTop: 16 }}>
+              <NewProjectButton label={dict.newProject} locale={locale} />
+            </div>
+          </div>
+        ) : (
         <div className="panel" style={{ overflow: "hidden" }}>
           <table className="tbl">
             <thead>
@@ -50,6 +65,7 @@ export default async function ProjectsPage() {
                 <th className="num">{dict.late}</th>
                 <th>{dict.due}</th>
                 <th>{locale === "ar" ? "الحالة" : "Status"}</th>
+                <th style={{ width: 40 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -118,12 +134,20 @@ export default async function ProjectsPage() {
                     <td>
                       <Chip>{p.status}</Chip>
                     </td>
+                    <td>
+                      <ProjectRowActions
+                        projectId={p.id}
+                        projectName={locale === "ar" ? p.name : p.nameEn ?? p.name}
+                        locale={locale}
+                      />
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

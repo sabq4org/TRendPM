@@ -1,4 +1,4 @@
-import { getCurrentUser, supabaseEnabled } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getAccent, getLocale, getTheme } from "@/lib/preferences";
 import { Avatar } from "@/components/primitives";
@@ -6,7 +6,7 @@ import AccentPicker from "@/components/accent-picker";
 
 export default async function SettingsPage() {
   const [user, locale, theme, accent] = await Promise.all([
-    getCurrentUser(),
+    requireUser(),
     getLocale(),
     getTheme(),
     getAccent(),
@@ -17,6 +17,16 @@ export default async function SettingsPage() {
     <div className="scroll">
       <div className="subhead">
         <h1>{dict.settings}</h1>
+        {user.workspaceRole === "admin" && (
+          <div style={{ marginInlineStart: "auto", display: "flex", gap: 8 }}>
+            <a href="/settings/members" className="btn sm">
+              {locale === "ar" ? "الأعضاء" : "Members"}
+            </a>
+            <a href="/settings/teams" className="btn sm">
+              {locale === "ar" ? "الفرق" : "Teams"}
+            </a>
+          </div>
+        )}
       </div>
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 720 }}>
         <div className="panel">
@@ -101,29 +111,24 @@ export default async function SettingsPage() {
 
         <div className="panel">
           <div className="panel-head">
-            <h3>{locale === "ar" ? "المصادقة" : "Authentication"}</h3>
+            <h3>{locale === "ar" ? "الحساب" : "Account"}</h3>
           </div>
-          <div style={{ padding: 16, fontSize: "var(--fs-sm)", color: "var(--text-2)" }}>
-            {supabaseEnabled() ? (
-              <span>
-                {locale === "ar"
-                  ? "Supabase Auth مُفعَّل. جلسة المستخدم تُقرأ من ملفات تعريف الارتباط."
-                  : "Supabase Auth is enabled. User session is read from cookies."}
-              </span>
-            ) : (
-              <div>
-                <div style={{ color: "var(--s-late)" }}>
-                  {locale === "ar"
-                    ? "وضع التطوير: Supabase غير مُعَدّ."
-                    : "Dev mode: Supabase is not configured."}
-                </div>
-                <div style={{ marginTop: 6, color: "var(--text-3)" }}>
-                  {locale === "ar"
-                    ? "أضف متغيرات NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_ANON_KEY و SUPABASE_SERVICE_ROLE_KEY في .env.local لتفعيل Auth الحقيقي."
-                    : "Add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY to .env.local to enable real auth."}
-                </div>
-              </div>
-            )}
+          <div style={{ padding: 16, display: "grid", gap: 12 }}>
+            <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-2)" }}>
+              {locale === "ar"
+                ? "يمكنك تغيير كلمة المرور أو تسجيل الخروج من هنا."
+                : "Change your password or sign out from here."}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <a className="btn" href="/settings/password">
+                {locale === "ar" ? "تغيير كلمة المرور" : "Change password"}
+              </a>
+              <form action="/api/auth/signout" method="post">
+                <button className="btn ghost" type="submit">
+                  {locale === "ar" ? "تسجيل الخروج" : "Sign out"}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Avatar, AvatarStack, PriorityFlag, StatusDot } from "./primitives";
 import { Icon } from "./icon";
-import { updateTask, updateTaskStatus } from "@/app/actions/tasks";
+import { deleteTask, updateTask, updateTaskStatus } from "@/app/actions/tasks";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { TASK_STATUSES, TASK_PRIORITIES, type TaskStatus, type TaskPriority } from "@/lib/db/schema";
 import { formatDate } from "@/lib/utils";
@@ -154,6 +154,32 @@ export default function TaskPanel({
               {data.project && (locale === "ar" ? data.project.name : data.project.nameEn ?? data.project.name)}
             </span>
           </>
+        )}
+        {data && (
+          <button
+            className="btn ghost icon sm"
+            type="button"
+            aria-label={locale === "ar" ? "حذف المهمة" : "Delete task"}
+            title={locale === "ar" ? "حذف المهمة" : "Delete task"}
+            onClick={() => {
+              const msg =
+                locale === "ar"
+                  ? "هل أنت متأكد من حذف هذه المهمة؟"
+                  : "Are you sure you want to delete this task?";
+              if (!confirm(msg)) return;
+              startTransition(async () => {
+                try {
+                  await deleteTask({ taskId: data.task.id });
+                  close();
+                  router.refresh();
+                } catch (err) {
+                  console.error(err);
+                }
+              });
+            }}
+          >
+            <Icon name="trash" size={12} />
+          </button>
         )}
         <button
           className="btn ghost icon sm"

@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getTasks, getWorkspaceMembers } from "@/lib/db/queries";
@@ -6,7 +6,7 @@ import { Avatar } from "@/components/primitives";
 import { TODAY, toIsoDate, daysBetween } from "@/lib/utils";
 
 export default async function WorkloadPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 

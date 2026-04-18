@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/preferences";
 import { getDictionary } from "@/lib/i18n";
 import { getTasks } from "@/lib/db/queries";
@@ -17,7 +17,7 @@ export default async function GanttPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 

@@ -1,165 +1,174 @@
 # Trend PM
 
-نظام إدارة مشاريع متقدم — Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + Neon Postgres + Supabase Auth.
-
-تم بناؤه بتحويل البروتوتايب الموجود في الجذر (`Trend PM.html` + `data.js` + `styles.css`) إلى تطبيق إنتاجي كامل يعتمد على قاعدة بيانات حقيقية و App Router.
+نظام إدارة مشاريع متقدم — Next.js 16 + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + Neon Postgres + مصادقة مدمجة (JWT + bcrypt).
 
 ---
 
 ## المميزات
 
-- **لوحة معلومات** تعرض مؤشرات الأداء (المشاريع النشطة، المهام المفتوحة، المهام المتأخرة، سرعة الإنجاز) مع جداول وتخطيطات للنشاط الأخير.
-- **إدارة المشاريع** — قائمة المشاريع + صفحة تفصيلية لكل مشروع مع تبويبات:
+- **لوحة معلومات** تعرض مؤشرات الأداء والمشاريع النشطة والمهام المتأخرة.
+- **إدارة المشاريع** — قائمة المشاريع + صفحة تفصيلية لكل مشروع مع:
   - `Overview` — ملخص المشروع والأعضاء والحالة.
-  - `Board` — لوحة Kanban بـ Drag & Drop (`@dnd-kit/core`).
+  - `Board` — لوحة Kanban بـ Drag & Drop (`@dnd-kit/core`) مع زر "إضافة مهمة" لكل عمود.
   - `List` — جدول مع قائمة منسدلة مباشرة لتغيير الحالة.
   - `Gantt` — عرض للقراءة فقط لمُخطَّط زمني.
   - `Calendar` — عرض تقويمي للمهام حسب تاريخ الاستحقاق.
-- **Task Side Panel** — لوحة جانبية ديناميكية لعرض/تعديل المهمة (عنوان، حالة، أولوية، تاريخ استحقاق، تقدم، تعليقات) عبر Server Actions.
-- **My Tasks** — مهام المستخدم الحالي مجمَّعة (متأخرة / اليوم / هذا الأسبوع / لاحقاً / مكتملة).
+- **Task Side Panel** — عرض/تعديل/حذف المهمة عبر Server Actions.
+- **My Tasks** — مهام المستخدم الحالي (متأخرة / اليوم / هذا الأسبوع / لاحقاً / مكتملة).
 - **Workload** — خريطة حرارية لتوزيع الحمل على 14 يوم.
-- **Analytics** — توزيع الحالات والأولويات، سرعة الإنجاز، حمل الأعضاء.
-- **Settings** — ضبط السمة، اللغة، واللون الرئيسي.
-- **ثنائي اللغة RTL/LTR** — عربي (افتراضي) + إنجليزي عبر كوكيز + Server Actions.
+- **Analytics** — توزيع الحالات والأولويات وسرعة الإنجاز.
+- **إدارة الأعضاء والفرق** — صفحات إدارية لدعوة الأعضاء، تغيير الأدوار، وإنشاء فرق.
+- **المصادقة المدمجة** — تسجيل دخول بالبريد + كلمة مرور (bcrypt)، جلسات JWT في HTTP-only cookies، حماية كل الصفحات عبر middleware.
+- **ثنائي اللغة RTL/LTR** — عربي (افتراضي) + إنجليزي.
 - **Dark / Light themes** + اختيار لون رئيسي (Accent).
-- **مصادقة** — Supabase Auth مُهيَّأ مع وضع تطوير fallback.
 
 ---
 
 ## المتطلبات
 
 - Node.js 20+
-- pnpm (مُستخدَم في التطوير) أو npm
-- حساب [Neon](https://neon.tech) (قاعدة بيانات Postgres)
-- (اختياري) مشروع Supabase Auth
+- pnpm (أو npm/yarn)
+- حساب [Neon](https://neon.tech) أو أي PostgreSQL 14+
 
 ---
 
-## البدء السريع
+## البدء السريع (لأول مرة)
 
 ```bash
 git clone https://github.com/sabq4org/TRendPM.git
 cd TRendPM
 pnpm install
-cp .env.example .env.local   # ثم عبّئ القيم
-pnpm db:reset                # (تحذير: يمسح schema.public)
-pnpm db:migrate              # تطبيق الهجرات
-pnpm db:seed                 # تعبئة بيانات البروتوتايب
-pnpm dev
+cp .env.example .env.local   # ثم عبّئ القيم (انظر أدناه)
+
+# تهيئة قاعدة البيانات
+pnpm db:migrate              # تطبيق الهجرات (ينشئ كل الجداول)
+pnpm db:bootstrap            # إنشاء مستخدم Admin وWorkspace فارغ
+
+pnpm dev                     # http://localhost:3000
 ```
 
-افتح <http://localhost:3000> — سيتم توجيهك إلى `/dashboard`.
+### متغيرات `.env.local` المطلوبة
 
-في وضع التطوير (عندما لا تكون متغيرات Supabase مُعبّأة) يدخل التطبيق تلقائياً بمستخدم `omar@trend.sa` من بيانات الـ seed.
+```
+DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+AUTH_SECRET="<شغّل: openssl rand -hex 32>"
 
----
-
-## متغيرات البيئة (`.env.local`)
-
-```env
-# Neon Postgres (مطلوب)
-DATABASE_URL="postgresql://user:pass@host/dbname?sslmode=require"
-
-# Supabase Auth (اختياري — اتركها فارغة لاستخدام وضع التطوير)
-NEXT_PUBLIC_SUPABASE_URL=""
-NEXT_PUBLIC_SUPABASE_ANON_KEY=""
-SUPABASE_SERVICE_ROLE_KEY=""
-
-# App
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# تُستخدم مرّة واحدة فقط عند تشغيل pnpm db:bootstrap
+ADMIN_EMAIL="you@example.com"
+ADMIN_NAME="اسمك"
+ADMIN_PASSWORD=""             # اتركه فارغاً لتوليد كلمة مرور عشوائية
+WORKSPACE_NAME="شركتي"
+WORKSPACE_SLUG="my-company"
 ```
 
 ---
 
 ## أوامر قاعدة البيانات
 
-| الأمر | الوصف |
-|---|---|
-| `pnpm db:generate` | توليد ملفات SQL migrations من schema.ts |
-| `pnpm db:migrate` | تطبيق الهجرات على Neon (سكربت مخصص) |
-| `pnpm db:push` | دفع الـ schema مباشرة (يتطلّب TTY) |
-| `pnpm db:studio` | فتح Drizzle Studio |
-| `pnpm db:seed` | تعبئة البيانات الأولية من البروتوتايب |
-| `pnpm db:reset` | إسقاط `public schema` وإعادة إنشائه |
+| الأمر              | الوصف                                                        |
+| ------------------ | ------------------------------------------------------------ |
+| `pnpm db:migrate`  | تطبيق جميع الهجرات الموجودة في `drizzle/`                    |
+| `pnpm db:bootstrap`| إنشاء Admin + Workspace من متغيرات البيئة (مرة واحدة)        |
+| `pnpm db:clean`    | **مسح جميع البيانات** (مع الإبقاء على الـ schema)            |
+| `pnpm db:reset`    | حذف schema.public بالكامل (⚠️ تدميري — يستخدم قبل `db:migrate`) |
+| `pnpm db:generate` | توليد ملف SQL جديد من تغييرات schema                         |
+| `pnpm db:studio`   | فتح Drizzle Studio لتصفح القاعدة                             |
 
----
+### إعادة التهيئة من الصفر
 
-## هيكل المشروع
-
-```
-/
-├── prototype/                    # البروتوتايب الأصلي (HTML + JSX + CSS)
-├── drizzle/                      # SQL migrations
-├── drizzle.config.ts
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx            # root layout (RTL + theme)
-│   │   ├── page.tsx              # يعيد التوجيه لـ /dashboard
-│   │   ├── globals.css           # Tailwind + tokens
-│   │   ├── tokens.css            # design tokens من styles.css
-│   │   ├── actions/              # Server Actions (tasks, preferences)
-│   │   ├── api/tasks/[id]/       # Route Handler لـ Task Panel
-│   │   └── (app)/                # كل الصفحات المصادَق عليها
-│   │       ├── layout.tsx        # Topbar + Sidebar
-│   │       ├── dashboard/
-│   │       ├── projects/
-│   │       │   └── [id]/         # Overview/Board/List/Gantt/Calendar
-│   │       ├── my-tasks/
-│   │       ├── workload/
-│   │       ├── analytics/
-│   │       └── settings/
-│   ├── components/
-│   │   ├── icon.tsx
-│   │   ├── primitives.tsx        # Avatar, StatusDot, PriorityFlag, Progress...
-│   │   ├── charts.tsx            # Sparkline, VelocityChart, BurnDown
-│   │   ├── kanban.tsx            # Drag & Drop
-│   │   ├── task-card.tsx
-│   │   ├── task-list-row.tsx
-│   │   ├── task-panel.tsx
-│   │   ├── tab-link.tsx
-│   │   ├── accent-picker.tsx
-│   │   └── shell/                # Sidebar + Topbar
-│   └── lib/
-│       ├── auth.ts               # Supabase + dev fallback
-│       ├── db/
-│       │   ├── schema.ts         # 13 جدول حسب SPEC.md
-│       │   ├── queries.ts        # استعلامات القراءة
-│       │   ├── index.ts          # Drizzle client
-│       │   ├── migrate.ts        # سكربت مخصص للهجرة
-│       │   ├── reset.ts
-│       │   └── seed.ts
-│       ├── i18n/                 # ar.json, en.json, helpers
-│       ├── preferences.ts        # قراءة الكوكيز (locale/theme/accent)
-│       └── utils.ts              # التواريخ + helpers
-└── package.json
+```bash
+pnpm db:clean        # امسح كل البيانات (يبقي الجداول)
+pnpm db:bootstrap    # أنشئ Admin + Workspace جديد
 ```
 
 ---
 
-## الـ Stack التقني
+## تسجيل الدخول لأول مرة
 
-- **Next.js 15 / React 19** — App Router + Server Components + Server Actions
-- **TypeScript (strict)**
-- **Tailwind CSS v4** + tokens من البروتوتايب الأصلي
-- **Drizzle ORM** + `@neondatabase/serverless`
-- **Supabase Auth** (scaffold)
-- **Zod** — validation على الـ Server Actions
-- **@dnd-kit/core** — Kanban drag & drop
-- **lucide-react** — icons (مع fallback SVG محلي)
+بعد تشغيل `pnpm db:bootstrap`، سيطبع السكربت بيانات الدخول:
 
----
+```
+─── Sign-in credentials ───
+Email:    ali@alhazmi.org
+Password: xxxxxxxxxxxx   ← مولّدة عشوائياً، احفظها الآن!
+───────────────────────────
+```
 
-## ملاحظات معمارية
-
-- **Mutations** دائماً عبر Server Actions مع `revalidatePath`.
-- **Reads الديناميكية** للـ Task Panel تمر عبر Route Handler `/api/tasks/[id]`.
-- **Auth** قابل للتفعيل/التعطيل عبر متغيرات البيئة (لا يكسر التطبيق إذا غابت).
-- **i18n + theming** بدون مكتبات ثقيلة — كوكيز + Server Actions فقط.
-- **RTL** عبر `dir` في `<html>` + CSS logical properties (`margin-inline-*`, `padding-inline-*`).
+- افتح `http://localhost:3000` → ستُحوَّل تلقائياً إلى `/login`.
+- أدخل البيانات → ستصل إلى `/dashboard` الفارغ.
+- من `الإعدادات ← الأعضاء` يمكنك دعوة بقية أعضاء الفريق.
+- من `الإعدادات ← الفرق` يمكنك إنشاء فرق وإضافة أعضاء.
+- من `الإعدادات ← تغيير كلمة المرور` يمكنك تغيير كلمة المرور.
 
 ---
 
-## المشروع الأصلي (البروتوتايب)
+## المعمارية
 
-- `Trend PM.html` + `data.js` + `styles.css` موجودة في `prototype/` كمرجع.
-- كل البيانات الـ seed (9 مستخدمين، 6 مشاريع، 35 مهمة، نشاط، تعليقات) مُنقولة من `data.js`.
+```
+src/
+├── app/
+│   ├── (app)/                  # صفحات محميَّة (تتطلب تسجيل دخول)
+│   │   ├── dashboard/
+│   │   ├── projects/[id]/
+│   │   ├── settings/members/   # إدارة الأعضاء (admin فقط)
+│   │   └── settings/teams/     # إدارة الفرق (admin فقط)
+│   ├── (auth)/login/            # صفحة تسجيل الدخول
+│   ├── actions/                 # Server Actions (tasks, auth, members, teams)
+│   └── api/auth/signout/        # Logout endpoint
+├── components/
+│   ├── shell/                   # layout: AppShell, Sidebar, Topbar
+│   ├── modal.tsx
+│   ├── kanban.tsx
+│   ├── task-panel.tsx
+│   ├── tasks/new-task-button.tsx
+│   ├── projects/new-project-button.tsx
+│   └── projects/project-row-actions.tsx
+├── lib/
+│   ├── auth/                    # JWT, bcrypt, session helpers
+│   ├── auth.ts                  # getCurrentUser / requireUser / requireWorkspaceAdmin
+│   └── db/                      # Drizzle schema, migrations, queries, bootstrap
+└── middleware.ts                # يحمي كل المسارات عدا /login و/api/auth/*
+```
+
+### المصادقة
+
+- **Hashing:** `bcryptjs` (12 rounds).
+- **Session:** JWT موقَّع بـ `AUTH_SECRET` (HS256) + صف في جدول `sessions` لدعم الإلغاء.
+- **Cookie:** `trend_session`, HTTP-only, SameSite=Lax, 30 يوم.
+- **Middleware:** يتحقق من الكوكي على كل طلب ويحوّل غير المسجَّلين إلى `/login`.
+
+### الأدوار (Workspace roles)
+
+- `admin` — كل شيء + إدارة الأعضاء والفرق.
+- `project_manager` — إنشاء مشاريع وإدارة مهامها.
+- `member` — عرض وإنشاء مهام في المشاريع التي هو عضو فيها.
+- `viewer` — قراءة فقط.
+
+---
+
+## النشر على Vercel
+
+1. ادفع الريبو إلى GitHub.
+2. استورد المشروع في Vercel (Framework: Next.js، Root Directory: `./`).
+3. في Environment Variables أضف:
+   - `DATABASE_URL`
+   - `AUTH_SECRET`
+   - `NEXT_PUBLIC_APP_URL` (رابط النشر)
+4. بعد أول نشر ناجح، على جهازك المحلي شغّل `pnpm db:migrate` ثم `pnpm db:bootstrap` مع نفس `DATABASE_URL` لتهيئة البيانات.
+5. ادخل إلى الموقع وسجّل الدخول.
+
+---
+
+## الاختبار المحلي
+
+```bash
+pnpm dev         # تطوير على http://localhost:3000
+pnpm build       # بناء إنتاجي
+pnpm lint        # فحص ESLint
+```
+
+---
+
+## المساهمون
+
+- © 2026 — Trend (سبق) — جميع الحقوق محفوظة.

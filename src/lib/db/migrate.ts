@@ -36,8 +36,17 @@ async function main() {
     }
     console.log(`→ Applying: ${file}`);
     const raw = readFileSync(join(drizzleDir, file), "utf-8");
-    const statements = raw
-      .split("--> statement-breakpoint")
+    const firstPass = raw.includes("--> statement-breakpoint")
+      ? raw.split("--> statement-breakpoint")
+      : [raw];
+    const statements = firstPass
+      .flatMap((chunk) =>
+        chunk
+          .split(/\n/)
+          .filter((l) => !l.trim().startsWith("--"))
+          .join("\n")
+          .split(";")
+      )
       .map((s) => s.trim())
       .filter(Boolean);
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getMyTasks, getProjects } from "@/lib/db/queries";
@@ -9,7 +9,7 @@ import type { TaskPriority, TaskStatus } from "@/lib/db/schema";
 import { TODAY, daysBetween, formatShortDate, isLate, toIsoDate } from "@/lib/utils";
 
 export default async function MyTasksPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 

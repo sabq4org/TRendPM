@@ -11,7 +11,7 @@ import {
   TASK_STATUSES,
   TASK_PRIORITIES,
 } from "@/lib/db/schema";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 const TaskStatusEnum = z.enum(TASK_STATUSES);
@@ -25,7 +25,7 @@ const UpdateStatusSchema = z.object({
 
 export async function updateTaskStatus(input: z.infer<typeof UpdateStatusSchema>) {
   const { taskId, status } = UpdateStatusSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const [existing] = await db
     .select()
@@ -71,7 +71,7 @@ const ReorderSchema = z.object({
 
 export async function reorderTasks(input: z.infer<typeof ReorderSchema>) {
   const { projectId, taskIds } = ReorderSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   for (let i = 0; i < taskIds.length; i++) {
     await db
@@ -94,7 +94,7 @@ const MoveSchema = z.object({
 
 export async function moveTask(input: z.infer<typeof MoveSchema>) {
   const { projectId, taskId, toStatus, toIndex } = MoveSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const [existing] = await db
     .select()
@@ -173,7 +173,7 @@ const CreateTaskSchema = z.object({
 
 export async function createTask(input: z.infer<typeof CreateTaskSchema>) {
   const parsed = CreateTaskSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const [proj] = await db
     .select({ key: projects.key })
@@ -244,7 +244,7 @@ const UpdateTaskSchema = z.object({
 
 export async function updateTask(input: z.infer<typeof UpdateTaskSchema>) {
   const parsed = UpdateTaskSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const [existing] = await db
     .select()
@@ -270,18 +270,103 @@ export async function updateTask(input: z.infer<typeof UpdateTaskSchema>) {
   return { ok: true };
 }
 
+// ─── deleteTask (soft-delete) ────────────────────────────────────────────────
+const DeleteTaskSchema = z.object({ taskId: z.string().uuid() });
+
+export async function deleteTask(input: z.infer<typeof DeleteTaskSchema>) {
+  const { taskId } = DeleteTaskSchema.parse(input);
+  const user = await requireUser();
+
+  const [existing] = await db
+    .select({ id: tasks.id, projectId: tasks.projectId })
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, user.workspaceId)))
+    .limit(1);
+  if (!existing) throw new Error("Task not found");
+
+  await db
+    .update(tasks)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+
+  revalidatePath(`/projects/${existing.projectId}`, "layout");
+  revalidatePath("/my-tasks");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 // ─── createProject ───────────────────────────────────────────────────────────
 const CreateProjectSchema = z.object({
   name: z.string().trim().min(1).max(150),
   nameEn: z.string().trim().optional(),
-  key: z.string().trim().min(2).max(10).regex(/^[A-Z0-9]+$/),
+  key: z
+    .string()
+    .trim()
+    .min(2)
+    .max(10)
+    .regex(/^[A-Z0-9]+$/, "المفتاح: أحرف إنجليزية كبيرة وأرقام فقط (مثال: MKT)"),
   client: z.string().trim().optional(),
   color: z.string().optional(),
+  status: z.enum(["planning", "active", "on_hold", "completed", "cancelled"]).default("active"),
 });
+
+export type CreateProjectState =
+  | { ok: true; projectId: string }
+  | { ok: false; error: string }
+  | null;
+
+export async function createProjectAction(
+  _prev: CreateProjectState,
+  formData: FormData
+): Promise<CreateProjectState> {
+  const user = await requireUser();
+  const parsed = CreateProjectSchema.safeParse({
+    name: formData.get("name"),
+    nameEn: formData.get("nameEn") || undefined,
+    key: (formData.get("key") as string | null)?.toUpperCase(),
+    client: formData.get("client") || undefined,
+    color: formData.get("color") || undefined,
+    status: formData.get("status") || undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة." };
+  }
+
+  const [existingKey] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(
+      and(eq(projects.workspaceId, user.workspaceId), eq(projects.key, parsed.data.key))
+    )
+    .limit(1);
+  if (existingKey) {
+    return { ok: false, error: `المفتاح "${parsed.data.key}" مستخدم بالفعل.` };
+  }
+
+  const [created] = await db
+    .insert(projects)
+    .values({
+      workspaceId: user.workspaceId,
+      name: parsed.data.name,
+      nameEn: parsed.data.nameEn,
+      key: parsed.data.key,
+      client: parsed.data.client,
+      color: parsed.data.color ?? "#38BDF8",
+      projectManagerId: user.id,
+      status: parsed.data.status,
+      priority: "medium",
+    })
+    .returning({ id: projects.id });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/projects");
+  revalidatePath("/", "layout");
+  return { ok: true, projectId: created.id };
+}
 
 export async function createProject(input: z.infer<typeof CreateProjectSchema>) {
   const parsed = CreateProjectSchema.parse(input);
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const [created] = await db
     .insert(projects)
@@ -293,7 +378,7 @@ export async function createProject(input: z.infer<typeof CreateProjectSchema>) 
       client: parsed.client,
       color: parsed.color ?? "#38BDF8",
       projectManagerId: user.id,
-      status: "active",
+      status: parsed.status,
       priority: "medium",
     })
     .returning();
@@ -301,4 +386,67 @@ export async function createProject(input: z.infer<typeof CreateProjectSchema>) 
   revalidatePath("/dashboard");
   revalidatePath("/projects");
   return { ok: true, project: created };
+}
+
+// ─── updateProject ───────────────────────────────────────────────────────────
+const UpdateProjectSchema = z.object({
+  projectId: z.string().uuid(),
+  name: z.string().trim().min(1).max(150).optional(),
+  nameEn: z.string().trim().nullable().optional(),
+  client: z.string().trim().nullable().optional(),
+  color: z.string().optional(),
+  status: z.enum(["planning", "active", "on_hold", "completed", "cancelled"]).optional(),
+  description: z.string().trim().nullable().optional(),
+});
+
+export async function updateProject(input: z.infer<typeof UpdateProjectSchema>) {
+  const parsed = UpdateProjectSchema.parse(input);
+  const user = await requireUser();
+
+  const [existing] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, parsed.projectId), eq(projects.workspaceId, user.workspaceId)))
+    .limit(1);
+  if (!existing) throw new Error("Project not found");
+
+  const updates: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.name !== undefined) updates.name = parsed.name;
+  if (parsed.nameEn !== undefined) updates.nameEn = parsed.nameEn;
+  if (parsed.client !== undefined) updates.client = parsed.client;
+  if (parsed.color !== undefined) updates.color = parsed.color;
+  if (parsed.status !== undefined) updates.status = parsed.status;
+  if (parsed.description !== undefined) updates.description = parsed.description;
+
+  await db.update(projects).set(updates).where(eq(projects.id, parsed.projectId));
+
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${parsed.projectId}`, "layout");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// ─── deleteProject (soft-delete) ─────────────────────────────────────────────
+const DeleteProjectSchema = z.object({ projectId: z.string().uuid() });
+
+export async function deleteProject(input: z.infer<typeof DeleteProjectSchema>) {
+  const { projectId } = DeleteProjectSchema.parse(input);
+  const user = await requireUser();
+
+  const [existing] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.workspaceId, user.workspaceId)))
+    .limit(1);
+  if (!existing) throw new Error("Project not found");
+
+  await db
+    .update(projects)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(projects.id, projectId));
+
+  revalidatePath("/dashboard");
+  revalidatePath("/projects");
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

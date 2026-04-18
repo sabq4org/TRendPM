@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getTaskById, getCommentsForTask, getProjectMembers } from "@/lib/db/queries";
 import { db } from "@/lib/db";
 import { taskAssignees, users, projects } from "@/lib/db/schema";
@@ -10,7 +10,7 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id } = await ctx.params;
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const task = await getTaskById(user.workspaceId, id);
   if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });

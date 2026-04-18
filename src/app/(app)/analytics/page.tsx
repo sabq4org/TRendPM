@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { getProjects, getTasks, getWorkspaceMembers } from "@/lib/db/queries";
@@ -7,7 +7,7 @@ import { Avatar, Chip, Progress } from "@/components/primitives";
 import { VelocityChart, Sparkline } from "@/components/charts";
 
 export default async function AnalyticsPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
 

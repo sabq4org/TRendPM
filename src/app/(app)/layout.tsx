@@ -1,7 +1,7 @@
 import Sidebar, { type SidebarProject, type SidebarTeam } from "@/components/shell/sidebar";
 import Topbar from "@/components/shell/topbar";
 import AppShell from "@/components/shell/app-shell";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale, getTheme } from "@/lib/preferences";
 import { db } from "@/lib/db";
@@ -10,7 +10,7 @@ import { and, eq, isNull, inArray, sql } from "drizzle-orm";
 import { getTeams } from "@/lib/db/queries";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [locale, theme, user] = await Promise.all([getLocale(), getTheme(), getCurrentUser()]);
+  const [locale, theme, user] = await Promise.all([getLocale(), getTheme(), requireUser()]);
   const dict = getDictionary(locale);
 
   const projRows = await db

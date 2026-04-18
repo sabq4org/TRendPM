@@ -40,7 +40,9 @@ export const users = pgTable("users", {
   role: text("role"),
   locale: text("locale").notNull().default("ar"),
   timezone: text("timezone").notNull().default("Asia/Riyadh"),
-  supabaseAuthId: uuid("supabase_auth_id").unique(),
+  passwordHash: text("password_hash"),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   twoFactorSecret: text("two_factor_secret"),
   ...timestamps,
 });
@@ -452,6 +454,25 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   team: one(teams, { fields: [teamMembers.teamId], references: [teams.id] }),
   user: one(users, { fields: [teamMembers.userId], references: [users.id] }),
 }));
+
+// ─── sessions ───────────────────────────────────────────────────────────────
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    userAgent: text("user_agent"),
+    ip: text("ip"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    sessionsUserIdx: index("sessions_user_idx").on(t.userId),
+    sessionsExpiresIdx: index("sessions_expires_idx").on(t.expiresAt),
+  })
+);
 
 // ─── Type exports ───────────────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import {
@@ -17,7 +17,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const locale = await getLocale();
   const dict = getDictionary(locale);
   const dateLocale = locale === "ar" ? arLocale : enUS;

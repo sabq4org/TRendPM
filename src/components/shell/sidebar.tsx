@@ -76,8 +76,18 @@ export default function Sidebar({
       <div className="sb-section">
         <div className="sb-head">
           <span>{dict.projects}</span>
-          <Icon name="plus" size={12} />
+          <Link href="/projects" className="sb-add" aria-label={dict.projects}>
+            <Icon name="plus" size={10} />
+          </Link>
         </div>
+        {projects.length === 0 && (
+          <Link href="/projects" className="sb-item muted">
+            <Icon name="project" />
+            <span className="truncate">
+              {locale === "ar" ? "إنشاء مشروع" : "Create project"}
+            </span>
+          </Link>
+        )}
         {projects.map((p) => (
           <Link
             key={p.id}
@@ -97,14 +107,35 @@ export default function Sidebar({
       <div className="sb-section">
         <div className="sb-head">
           <span>{dict.teams}</span>
+          <Link
+            href="/settings/teams"
+            className="sb-add"
+            aria-label={locale === "ar" ? "إدارة الفرق" : "Manage teams"}
+            title={locale === "ar" ? "إدارة الفرق" : "Manage teams"}
+          >
+            <Icon name="plus" size={10} />
+          </Link>
         </div>
-        {teams.map((t) => (
-          <div key={t.id} className="sb-item">
+        {teams.length === 0 ? (
+          <Link href="/settings/teams" className="sb-item muted">
             <Icon name="team" />
-            <span className="truncate">{t.name}</span>
-            <span className="tail">{t.memberCount}</span>
-          </div>
-        ))}
+            <span className="truncate">
+              {locale === "ar" ? "إنشاء فريق" : "Create team"}
+            </span>
+          </Link>
+        ) : (
+          teams.map((t) => (
+            <Link
+              key={t.id}
+              href="/settings/teams"
+              className="sb-item"
+            >
+              <Icon name="team" />
+              <span className="truncate">{t.name}</span>
+              <span className="tail">{t.memberCount}</span>
+            </Link>
+          ))
+        )}
       </div>
 
       <div className="sb-section">

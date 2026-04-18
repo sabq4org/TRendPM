@@ -1,7 +1,9 @@
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { db } from "./db";
-import { users, workspaces, workspaceMembers } from "./db/schema";
+import { users, workspaces, workspaceMembers, sessions } from "./db/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { readSessionCookie } from "./auth/session";
 
 export type CurrentUser = {
   id: string;
@@ -13,36 +15,26 @@ export type CurrentUser = {
   role: string | null;
   locale: string;
   workspaceId: string;
+  workspaceRole: string;
 };
 
-export const supabaseEnabled = () =>
-  Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
 /**
- * Returns the current authenticated user.
- *
- * - If Supabase env vars are present, reads the Supabase session and matches by supabase_auth_id.
- *   (Stub for now — the SSR client reads from cookies; fill in when real session cookies exist.)
- * - Otherwise returns a "dev default" user (first user in DB — Sarah Al-Rashed, workspace owner)
- *   so the app stays usable without authentication.
+ * Returns the current authenticated user, or null if not signed in.
  */
-export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
-  if (supabaseEnabled()) {
-    // TODO: real Supabase session read. For now falls through to dev default.
-  }
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  const payload = await readSessionCookie();
+  if (!payload?.sub || !payload.sid) return null;
 
-  const [ws] = await db.select().from(workspaces).where(isNull(workspaces.deletedAt)).limit(1);
-  if (!ws) {
-    throw new Error(
-      "No workspace in the database. Run `pnpm db:seed` to populate initial data."
-    );
-  }
+  const [session] = await db
+    .select({ id: sessions.id, expiresAt: sessions.expiresAt, userId: sessions.userId })
+    .from(sessions)
+    .where(eq(sessions.id, payload.sid))
+    .limit(1);
 
-  const [row] = await db
+  if (!session || session.userId !== payload.sub) return null;
+  if (session.expiresAt.getTime() < Date.now()) return null;
+
+  const [user] = await db
     .select({
       id: users.id,
       email: users.email,
@@ -54,16 +46,62 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
       locale: users.locale,
     })
     .from(users)
-    .innerJoin(
-      workspaceMembers,
-      and(eq(workspaceMembers.userId, users.id), eq(workspaceMembers.workspaceId, ws.id))
-    )
-    .where(eq(users.email, "omar@trend.sa"))
+    .where(and(eq(users.id, payload.sub), isNull(users.deletedAt)))
     .limit(1);
 
-  if (!row) {
-    throw new Error("Dev default user (omar@trend.sa) not found — run pnpm db:seed");
+  if (!user) return null;
+
+  // Figure out active workspace: JWT-preferred, else first membership.
+  let workspaceId = payload.ws ?? null;
+  let workspaceRole: string | null = null;
+
+  if (workspaceId) {
+    const [wm] = await db
+      .select({ role: workspaceMembers.role })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.userId, user.id),
+          eq(workspaceMembers.workspaceId, workspaceId)
+        )
+      )
+      .limit(1);
+    workspaceRole = wm?.role ?? null;
+    if (!wm) workspaceId = null;
   }
 
-  return { ...row, workspaceId: ws.id };
+  if (!workspaceId) {
+    const [first] = await db
+      .select({ id: workspaces.id, role: workspaceMembers.role })
+      .from(workspaces)
+      .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, workspaces.id))
+      .where(and(eq(workspaceMembers.userId, user.id), isNull(workspaces.deletedAt)))
+      .limit(1);
+    if (!first) return null;
+    workspaceId = first.id;
+    workspaceRole = first.role;
+  }
+
+  return {
+    ...user,
+    workspaceId,
+    workspaceRole: workspaceRole ?? "member",
+  };
 });
+
+/**
+ * Throws a redirect to /login if the user is not authenticated.
+ */
+export async function requireUser(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
+}
+
+export async function requireWorkspaceAdmin(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (user.workspaceRole !== "admin") {
+    throw new Error("Forbidden: admin access required.");
+  }
+  return user;
+}

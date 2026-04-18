@@ -16,7 +16,8 @@ import {
 import { moveTask } from "@/app/actions/tasks";
 import { TaskCard, type TaskCardData } from "./task-card";
 import { TASK_STATUSES, type TaskStatus } from "@/lib/db/schema";
-import type { Dictionary } from "@/lib/i18n";
+import type { Dictionary, Locale } from "@/lib/i18n";
+import NewTaskButton, { type TaskAssigneeOption } from "./tasks/new-task-button";
 
 type Columns = Record<TaskStatus, TaskCardData[]>;
 
@@ -62,11 +63,15 @@ function Column({
   tasks,
   dict,
   projectId,
+  locale,
+  assignees,
 }: {
   status: TaskStatus;
   tasks: TaskCardData[];
   dict: Dictionary;
   projectId: string;
+  locale: Locale;
+  assignees: TaskAssigneeOption[];
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: `col:${status}` });
   return (
@@ -88,18 +93,14 @@ function Column({
             href={`/projects/${projectId}/board?task=${t.id}`}
           />
         ))}
-        {tasks.length === 0 && (
-          <div
-            style={{
-              padding: "12px",
-              textAlign: "center",
-              fontSize: "var(--fs-xs)",
-              color: "var(--text-4)",
-            }}
-          >
-            —
-          </div>
-        )}
+        <NewTaskButton
+          projectId={projectId}
+          assignees={assignees}
+          locale={locale}
+          defaultStatus={status}
+          compact
+          label={locale === "ar" ? "إضافة مهمة" : "Add task"}
+        />
       </div>
     </div>
   );
@@ -135,10 +136,14 @@ export default function KanbanBoard({
   projectId,
   tasks: initial,
   dict,
+  locale,
+  assignees,
 }: {
   projectId: string;
   tasks: TaskCardData[];
   dict: Dictionary;
+  locale: Locale;
+  assignees: TaskAssigneeOption[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -216,6 +221,8 @@ export default function KanbanBoard({
             tasks={columns[s]}
             dict={dict}
             projectId={projectId}
+            locale={locale}
+            assignees={assignees}
           />
         ))}
       </div>
