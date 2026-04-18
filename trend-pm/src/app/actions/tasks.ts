@@ -137,7 +137,7 @@ export async function moveTask(input: z.infer<typeof MoveSchema>) {
       if (toStatus === "done") {
         updates.progress = 100;
         updates.completedAt = new Date();
-      } else if (existing.status === "done" && toStatus !== "done") {
+      } else if (existing.status === "done") {
         updates.completedAt = null;
       }
     }
@@ -182,10 +182,14 @@ export async function createTask(input: z.infer<typeof CreateTaskSchema>) {
     .limit(1);
   const projectKey = proj?.key ?? "TASK";
 
-  const [{ n: nextNum }] = await db.execute<{ n: number }>(
-    sql`select coalesce(max(cast(split_part(code,'-',2) as int)),0)+1 as n from tasks where project_id = ${parsed.projectId}`
-  );
-  const code = `${projectKey}-${nextNum ?? 1}`;
+  const [nextRow] = await db
+    .select({
+      n: sql<number>`coalesce(max(cast(split_part(${tasks.code},'-',2) as int)),0)+1`,
+    })
+    .from(tasks)
+    .where(eq(tasks.projectId, parsed.projectId));
+  const nextNum = Number(nextRow?.n ?? 1);
+  const code = `${projectKey}-${nextNum}`;
 
   const [maxPos] = await db
     .select({ m: sql<number>`coalesce(max(position),0)` })
