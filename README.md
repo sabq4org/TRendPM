@@ -1,282 +1,165 @@
-# Trend PM — منصة إدارة المشاريع والمهام
+# Trend PM
 
-> تطبيق ويب Production-Ready لإدارة المشاريع والمهام لشركة "ترند" التقنية.
-> واجهة عربية RTL أولاً مع دعم الإنجليزية.
+نظام إدارة مشاريع متقدم — Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + Neon Postgres + Supabase Auth.
 
----
-
-## 📦 محتويات حزمة التسليم
-
-| الملف | الوصف |
-|---|---|
-| `README.md` | هذا الملف — نظرة عامة + تعليمات التشغيل |
-| `SPEC.md` | المواصفات التقنية الكاملة (Database Schema + API + Screens) |
-| `ROADMAP.md` | المراحل السبع للتنفيذ مع Acceptance Criteria |
-| `Trend PM.html` | النموذج التفاعلي البصري — افتحه في المتصفح كمرجع تصميم |
+تم بناؤه بتحويل البروتوتايب الموجود في الجذر (`Trend PM.html` + `data.js` + `styles.css`) إلى تطبيق إنتاجي كامل يعتمد على قاعدة بيانات حقيقية و App Router.
 
 ---
 
-## 🎯 نظرة عامة
+## المميزات
 
-### المشكلة
-فريق تقني موزّع يعمل على عدة مشاريع بالتوازي. الجهود مشتتة، لا توجد رؤية واضحة لمن يعمل على ماذا، ولا لنسب الإنجاز، ولا للتأخيرات.
-
-### الحل
-منصة داخلية لإدارة المشاريع والمهام تجمع: Dashboard + Kanban + Gantt + Workload View + My Tasks + Analytics في نظام واحد.
-
-### الجمهور
-الفريق التقني الداخلي في "ترند" (مطوّرين، مديري مشاريع، مصمّمين، QA).
-
----
-
-## 🛠 الحزمة التقنية المعتمدة (2026)
-
-```
-Frontend
-├── Next.js 15 (App Router)
-├── React 19
-├── TypeScript (strict mode)
-├── Tailwind CSS v4
-├── shadcn/ui + Radix Primitives
-├── Framer Motion (animations)
-├── TanStack Query (server state)
-├── Zustand (client state)
-├── React Hook Form + Zod
-├── dnd-kit (drag & drop)
-├── Tiptap (rich text editor)
-└── Recharts + visx (charts & Gantt)
-
-Backend
-├── Next.js Server Actions + Route Handlers
-├── tRPC (اختياري — للـ type safety الكامل)
-├── PostgreSQL (Supabase أو Neon)
-├── Drizzle ORM (+ migrations)
-├── Better-Auth أو Supabase Auth (Magic Link + Google OAuth + 2FA)
-├── Supabase Realtime (notifications + comments live)
-└── Supabase Storage أو UploadThing (attachments)
-
-Testing & DevOps
-├── Vitest (unit)
-├── Playwright (e2e)
-├── Vercel (deployment)
-└── Turborepo (اختياري لو Monorepo)
-```
+- **لوحة معلومات** تعرض مؤشرات الأداء (المشاريع النشطة، المهام المفتوحة، المهام المتأخرة، سرعة الإنجاز) مع جداول وتخطيطات للنشاط الأخير.
+- **إدارة المشاريع** — قائمة المشاريع + صفحة تفصيلية لكل مشروع مع تبويبات:
+  - `Overview` — ملخص المشروع والأعضاء والحالة.
+  - `Board` — لوحة Kanban بـ Drag & Drop (`@dnd-kit/core`).
+  - `List` — جدول مع قائمة منسدلة مباشرة لتغيير الحالة.
+  - `Gantt` — عرض للقراءة فقط لمُخطَّط زمني.
+  - `Calendar` — عرض تقويمي للمهام حسب تاريخ الاستحقاق.
+- **Task Side Panel** — لوحة جانبية ديناميكية لعرض/تعديل المهمة (عنوان، حالة، أولوية، تاريخ استحقاق، تقدم، تعليقات) عبر Server Actions.
+- **My Tasks** — مهام المستخدم الحالي مجمَّعة (متأخرة / اليوم / هذا الأسبوع / لاحقاً / مكتملة).
+- **Workload** — خريطة حرارية لتوزيع الحمل على 14 يوم.
+- **Analytics** — توزيع الحالات والأولويات، سرعة الإنجاز، حمل الأعضاء.
+- **Settings** — ضبط السمة، اللغة، واللون الرئيسي.
+- **ثنائي اللغة RTL/LTR** — عربي (افتراضي) + إنجليزي عبر كوكيز + Server Actions.
+- **Dark / Light themes** + اختيار لون رئيسي (Accent).
+- **مصادقة** — Supabase Auth مُهيَّأ مع وضع تطوير fallback.
 
 ---
 
-## ⚙️ متطلبات البيئة
+## المتطلبات
 
-| الأداة | الإصدار الأدنى |
-|---|---|
-| Node.js | 20.x أو أحدث |
-| pnpm | 9.x (مفضّل على npm/yarn) |
-| PostgreSQL | 15+ (أو حساب Supabase/Neon) |
-| Git | أي إصدار حديث |
+- Node.js 20+
+- pnpm (مُستخدَم في التطوير) أو npm
+- حساب [Neon](https://neon.tech) (قاعدة بيانات Postgres)
+- (اختياري) مشروع Supabase Auth
 
 ---
 
-## 🚀 تعليمات التشغيل
+## البدء السريع
 
-### 1) استنساخ المشروع
 ```bash
-git clone <repo-url> trend-pm
-cd trend-pm
+git clone https://github.com/sabq4org/TRendPM.git
+cd TRendPM
 pnpm install
+cp .env.example .env.local   # ثم عبّئ القيم
+pnpm db:reset                # (تحذير: يمسح schema.public)
+pnpm db:migrate              # تطبيق الهجرات
+pnpm db:seed                 # تعبئة بيانات البروتوتايب
+pnpm dev
 ```
 
-### 2) إعداد متغيرات البيئة
-انسخ `.env.example` إلى `.env.local` واملأ القيم:
+افتح <http://localhost:3000> — سيتم توجيهك إلى `/dashboard`.
 
-```bash
-cp .env.example .env.local
-```
+في وضع التطوير (عندما لا تكون متغيرات Supabase مُعبّأة) يدخل التطبيق تلقائياً بمستخدم `omar@trend.sa` من بيانات الـ seed.
 
-محتوى `.env.example`:
+---
+
+## متغيرات البيئة (`.env.local`)
+
 ```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/trend_pm"
-DIRECT_URL="postgresql://user:password@localhost:5432/trend_pm"
+# Neon Postgres (مطلوب)
+DATABASE_URL="postgresql://user:pass@host/dbname?sslmode=require"
 
-# Auth
-BETTER_AUTH_SECRET="<generate-with-openssl-rand-base64-32>"
-BETTER_AUTH_URL="http://localhost:3000"
-
-# OAuth (اختياري)
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-
-# Supabase (لو مستخدم)
+# Supabase Auth (اختياري — اتركها فارغة لاستخدام وضع التطوير)
 NEXT_PUBLIC_SUPABASE_URL=""
 NEXT_PUBLIC_SUPABASE_ANON_KEY=""
 SUPABASE_SERVICE_ROLE_KEY=""
 
-# Storage
-UPLOADTHING_SECRET=""
-UPLOADTHING_APP_ID=""
-
-# Email (للـ Magic Link + الإشعارات)
-RESEND_API_KEY=""
-EMAIL_FROM="noreply@trend.sa"
-```
-
-### 3) إعداد قاعدة البيانات
-```bash
-# إنشاء قاعدة بيانات محلية (لو بدون Supabase)
-createdb trend_pm
-
-# تطبيق الـ schema
-pnpm db:generate        # توليد migration من Drizzle schema
-pnpm db:migrate         # تطبيق الـ migrations
-
-# تحميل بيانات تجريبية
-pnpm db:seed
-```
-
-### 4) تشغيل الـ dev server
-```bash
-pnpm dev
-```
-افتح `http://localhost:3000`.
-
-### 5) أوامر أخرى مفيدة
-```bash
-pnpm build              # بناء للإنتاج
-pnpm start              # تشغيل إنتاج محلياً
-pnpm lint               # فحص ESLint
-pnpm typecheck          # فحص TypeScript
-pnpm test               # تشغيل Vitest
-pnpm test:e2e           # تشغيل Playwright
-pnpm db:studio          # فتح Drizzle Studio لتصفح الـ DB
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 ---
 
-## 📁 هيكل المجلدات المقترح
+## أوامر قاعدة البيانات
+
+| الأمر | الوصف |
+|---|---|
+| `pnpm db:generate` | توليد ملفات SQL migrations من schema.ts |
+| `pnpm db:migrate` | تطبيق الهجرات على Neon (سكربت مخصص) |
+| `pnpm db:push` | دفع الـ schema مباشرة (يتطلّب TTY) |
+| `pnpm db:studio` | فتح Drizzle Studio |
+| `pnpm db:seed` | تعبئة البيانات الأولية من البروتوتايب |
+| `pnpm db:reset` | إسقاط `public schema` وإعادة إنشائه |
+
+---
+
+## هيكل المشروع
 
 ```
-trend-pm/
-├── app/                          # Next.js App Router
-│   ├── (auth)/
-│   │   ├── login/page.tsx
-│   │   ├── signup/page.tsx
-│   │   └── verify/page.tsx
-│   ├── (app)/
-│   │   ├── layout.tsx            # Shell (Sidebar + Topbar)
-│   │   ├── dashboard/page.tsx
-│   │   ├── projects/
-│   │   │   ├── page.tsx          # قائمة المشاريع
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx      # تفاصيل المشروع
-│   │   │       ├── kanban/page.tsx
-│   │   │       ├── list/page.tsx
-│   │   │       ├── gantt/page.tsx
-│   │   │       └── calendar/page.tsx
-│   │   ├── my-tasks/page.tsx
-│   │   ├── workload/page.tsx
-│   │   ├── team/
-│   │   │   ├── page.tsx
-│   │   │   └── [memberId]/page.tsx
-│   │   └── settings/page.tsx
-│   ├── api/                      # Route Handlers (لو لا تستخدم tRPC)
-│   ├── layout.tsx                # Root layout (RTL + theme provider)
-│   └── globals.css
-├── components/
-│   ├── ui/                       # shadcn components
-│   ├── shell/                    # Sidebar, Topbar, CommandPalette
-│   ├── projects/
-│   ├── tasks/
-│   │   ├── TaskCard.tsx
-│   │   ├── TaskSidePanel.tsx
-│   │   ├── KanbanBoard.tsx
-│   │   └── GanttChart.tsx
-│   └── analytics/
-├── lib/
-│   ├── db/
-│   │   ├── schema.ts             # Drizzle schema
-│   │   ├── migrations/
-│   │   ├── queries.ts
-│   │   └── seed.ts
-│   ├── auth.ts
-│   ├── trpc/
-│   ├── validations/              # Zod schemas
-│   └── utils.ts
-├── hooks/
-├── stores/                       # Zustand stores
-├── i18n/
-│   ├── ar.json
-│   └── en.json
-├── public/
-├── tests/
+/
+├── prototype/                    # البروتوتايب الأصلي (HTML + JSX + CSS)
+├── drizzle/                      # SQL migrations
 ├── drizzle.config.ts
-├── next.config.ts
-├── tailwind.config.ts
-├── tsconfig.json
-├── .env.example
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx            # root layout (RTL + theme)
+│   │   ├── page.tsx              # يعيد التوجيه لـ /dashboard
+│   │   ├── globals.css           # Tailwind + tokens
+│   │   ├── tokens.css            # design tokens من styles.css
+│   │   ├── actions/              # Server Actions (tasks, preferences)
+│   │   ├── api/tasks/[id]/       # Route Handler لـ Task Panel
+│   │   └── (app)/                # كل الصفحات المصادَق عليها
+│   │       ├── layout.tsx        # Topbar + Sidebar
+│   │       ├── dashboard/
+│   │       ├── projects/
+│   │       │   └── [id]/         # Overview/Board/List/Gantt/Calendar
+│   │       ├── my-tasks/
+│   │       ├── workload/
+│   │       ├── analytics/
+│   │       └── settings/
+│   ├── components/
+│   │   ├── icon.tsx
+│   │   ├── primitives.tsx        # Avatar, StatusDot, PriorityFlag, Progress...
+│   │   ├── charts.tsx            # Sparkline, VelocityChart, BurnDown
+│   │   ├── kanban.tsx            # Drag & Drop
+│   │   ├── task-card.tsx
+│   │   ├── task-list-row.tsx
+│   │   ├── task-panel.tsx
+│   │   ├── tab-link.tsx
+│   │   ├── accent-picker.tsx
+│   │   └── shell/                # Sidebar + Topbar
+│   └── lib/
+│       ├── auth.ts               # Supabase + dev fallback
+│       ├── db/
+│       │   ├── schema.ts         # 13 جدول حسب SPEC.md
+│       │   ├── queries.ts        # استعلامات القراءة
+│       │   ├── index.ts          # Drizzle client
+│       │   ├── migrate.ts        # سكربت مخصص للهجرة
+│       │   ├── reset.ts
+│       │   └── seed.ts
+│       ├── i18n/                 # ar.json, en.json, helpers
+│       ├── preferences.ts        # قراءة الكوكيز (locale/theme/accent)
+│       └── utils.ts              # التواريخ + helpers
 └── package.json
 ```
 
 ---
 
-## 🎨 المرجع التصميمي
+## الـ Stack التقني
 
-افتح `Trend PM.html` في أي متصفح (بنقرة مزدوجة) — هذا نموذج تفاعلي كامل يعرض:
-
-- **Dashboard** مع KPIs + قائمة المشاريع + أكثر الأعضاء ضغطاً + Activity Feed
-- **Project Detail** بـ 4 عروض: Kanban / List / Gantt / Calendar
-- **My Tasks** و **Workload View** و **Team**
-- **Command Palette** (Cmd+K) و **Task Side Panel**
-- **Dark/Light mode** و **RTL/LTR** و **مبدّل الخطوط**
-
-المطلوب من الفريق: إعادة بناء هذه الشاشات في Next.js بنفس المنطق والتصميم، مع استبدال البيانات الثابتة ببيانات حقيقية من قاعدة البيانات.
-
-**الـ Tokens المستخدمة** (مذكورة تفصيلياً في `SPEC.md`):
-- الخطوط: IBM Plex Sans Arabic (UI) + IBM Plex Mono (أرقام/ID) + IBM Plex Sans (إنجليزي)
-- Accent افتراضي: `oklch(72% 0.14 162)` (أخضر هادئ)
-- الثيم الافتراضي: Dark
-- الاتجاه الافتراضي: RTL
+- **Next.js 15 / React 19** — App Router + Server Components + Server Actions
+- **TypeScript (strict)**
+- **Tailwind CSS v4** + tokens من البروتوتايب الأصلي
+- **Drizzle ORM** + `@neondatabase/serverless`
+- **Supabase Auth** (scaffold)
+- **Zod** — validation على الـ Server Actions
+- **@dnd-kit/core** — Kanban drag & drop
+- **lucide-react** — icons (مع fallback SVG محلي)
 
 ---
 
-## 📏 قواعد الجودة (Non-negotiable)
+## ملاحظات معمارية
 
-1. **TypeScript strict** — لا `any`، لا `@ts-ignore`.
-2. **Server Components أولاً** — لا تستخدم `"use client"` إلا عند الحاجة للتفاعل.
-3. **Zod** للتحقق من كل مدخلات API (بدون استثناء).
-4. **RLS على مستوى DB** — لا تعتمد على فحوصات التطبيق وحدها.
-5. **Soft delete** — كل جدول يحتوي `deletedAt`.
-6. **Indexes** على: `projectId`, `assigneeId`, `dueDate`, `status`.
-7. **Error Boundaries** + صفحات `404.tsx` و `error.tsx` مخصّصة.
-8. **RTL صحيح** — استخدام `logical properties` (`ms-*`, `me-*`, `ps-*`, `pe-*`) بدلاً من `ml-*`, `mr-*`.
-9. **Accessibility (WCAG AA)** — كل عنصر تفاعلي له `aria-label`، keyboard nav يعمل.
-10. **Testing** — كل Server Action له unit test، كل flow رئيسي له e2e test.
+- **Mutations** دائماً عبر Server Actions مع `revalidatePath`.
+- **Reads الديناميكية** للـ Task Panel تمر عبر Route Handler `/api/tasks/[id]`.
+- **Auth** قابل للتفعيل/التعطيل عبر متغيرات البيئة (لا يكسر التطبيق إذا غابت).
+- **i18n + theming** بدون مكتبات ثقيلة — كوكيز + Server Actions فقط.
+- **RTL** عبر `dir` في `<html>` + CSS logical properties (`margin-inline-*`, `padding-inline-*`).
 
 ---
 
-## 🚢 النشر (Deployment)
+## المشروع الأصلي (البروتوتايب)
 
-### Vercel (المفضّل)
-```bash
-vercel link
-vercel env pull .env.local
-vercel --prod
-```
-
-### متغيرات البيئة في Production
-ارفعها عبر Vercel Dashboard → Project → Settings → Environment Variables.
-
-### قاعدة البيانات في Production
-- **Neon** للـ Postgres (Serverless, branching للبيئات)
-- **Supabase** لو تحتاج Realtime + Auth + Storage في مكان واحد
-
----
-
-## 📚 المراجع
-
-- راجع `SPEC.md` للـ Database Schema الكامل + API contracts
-- راجع `ROADMAP.md` لخطة التنفيذ على ٧ مراحل
-- افتح `Trend PM.html` كمرجع بصري دائم
-
----
-
-## 📞 جهة الاتصال
-للأسئلة التقنية أو توضيحات المواصفات، ارجع للمستشار التقني.
+- `Trend PM.html` + `data.js` + `styles.css` موجودة في `prototype/` كمرجع.
+- كل البيانات الـ seed (9 مستخدمين، 6 مشاريع، 35 مهمة، نشاط، تعليقات) مُنقولة من `data.js`.
