@@ -121,7 +121,7 @@ export default async function ProjectLayout({
         </div>
       </div>
       {children}
-      <TaskPanel locale={locale} dict={dict} />
+      <TaskPanel locale={locale} dict={dict} currentUserId={user.id} />
     </>
   );
 }

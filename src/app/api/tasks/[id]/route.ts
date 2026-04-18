@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getTaskById, getCommentsForTask, getProjectMembers } from "@/lib/db/queries";
 import { db } from "@/lib/db";
-import { taskAssignees, users, projects } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { taskAssignees, users, projects, checklistItems } from "@/lib/db/schema";
+import { and, asc, eq } from "drizzle-orm";
 
 export async function GET(
   _req: Request,
@@ -15,35 +15,44 @@ export async function GET(
   const task = await getTaskById(user.workspaceId, id);
   if (!task) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const [commentsList, members, assigneeRows, projRows] = await Promise.all([
-    getCommentsForTask(id),
-    getProjectMembers(task.projectId),
-    db
-      .select({
-        userId: taskAssignees.userId,
-        id: users.id,
-        name: users.name,
-        nameEn: users.nameEn,
-        initials: users.initials,
-        hue: users.hue,
-      })
-      .from(taskAssignees)
-      .leftJoin(users, eq(taskAssignees.userId, users.id))
-      .where(eq(taskAssignees.taskId, id)),
-    db
-      .select({
-        id: projects.id,
-        key: projects.key,
-        name: projects.name,
-        nameEn: projects.nameEn,
-        color: projects.color,
-      })
-      .from(projects)
-      .where(and(eq(projects.id, task.projectId)))
-      .limit(1),
-  ]);
-
-  void members;
+  const [commentsList, members, assigneeRows, projRows, checklistRows] =
+    await Promise.all([
+      getCommentsForTask(id),
+      getProjectMembers(task.projectId),
+      db
+        .select({
+          userId: taskAssignees.userId,
+          id: users.id,
+          name: users.name,
+          nameEn: users.nameEn,
+          initials: users.initials,
+          hue: users.hue,
+        })
+        .from(taskAssignees)
+        .leftJoin(users, eq(taskAssignees.userId, users.id))
+        .where(eq(taskAssignees.taskId, id)),
+      db
+        .select({
+          id: projects.id,
+          key: projects.key,
+          name: projects.name,
+          nameEn: projects.nameEn,
+          color: projects.color,
+        })
+        .from(projects)
+        .where(and(eq(projects.id, task.projectId)))
+        .limit(1),
+      db
+        .select({
+          id: checklistItems.id,
+          content: checklistItems.content,
+          done: checklistItems.done,
+          position: checklistItems.position,
+        })
+        .from(checklistItems)
+        .where(eq(checklistItems.taskId, id))
+        .orderBy(asc(checklistItems.position), asc(checklistItems.createdAt)),
+    ]);
 
   return NextResponse.json({
     task: {
@@ -92,6 +101,12 @@ export async function GET(
       initials: m.initials,
       hue: m.hue,
       role: m.role,
+    })),
+    checklist: checklistRows.map((c) => ({
+      id: c.id,
+      content: c.content,
+      done: c.done,
+      position: c.position,
     })),
   });
 }

@@ -5,17 +5,33 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Avatar, AvatarStack, PriorityFlag, StatusDot } from "./primitives";
 import { Icon } from "./icon";
 import { deleteTask, updateTask, updateTaskStatus } from "@/app/actions/tasks";
+import {
+  setTaskAssignees,
+  updateTaskDescription,
+  addChecklistItem,
+  toggleChecklistItem,
+  deleteChecklistItem,
+  addComment,
+  deleteComment,
+  updateEstimate,
+} from "@/app/actions/task-details";
 import type { Dictionary, Locale } from "@/lib/i18n";
-import { TASK_STATUSES, TASK_PRIORITIES, type TaskStatus, type TaskPriority } from "@/lib/db/schema";
-import { formatDate } from "@/lib/utils";
+import {
+  TASK_STATUSES,
+  TASK_PRIORITIES,
+  type TaskStatus,
+  type TaskPriority,
+} from "@/lib/db/schema";
 import { formatDistanceToNowStrict } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
+
+type TaskDescription = { type?: string; text?: string } | null | unknown;
 
 type TaskDetail = {
   id: string;
   code: string;
   title: string;
-  description: unknown;
+  description: TaskDescription;
   status: TaskStatus;
   priority: TaskPriority;
   progress: number;
@@ -39,7 +55,7 @@ type Comment = {
   id: string;
   text: string | null;
   createdAt: string;
-  author: Assignee | null;
+  author: (Assignee & { id: string }) | null;
 };
 
 type ProjectBrief = {
@@ -50,20 +66,40 @@ type ProjectBrief = {
   color: string | null;
 };
 
+type ChecklistItem = {
+  id: string;
+  content: string;
+  done: boolean;
+  position: number;
+};
+
 type PanelData = {
   task: TaskDetail;
   project: ProjectBrief | null;
   assignees: Assignee[];
   comments: Comment[];
   members: Assignee[];
+  checklist: ChecklistItem[];
 };
+
+function descriptionText(d: TaskDescription): string {
+  if (!d) return "";
+  if (typeof d === "string") return d;
+  if (typeof d === "object" && d !== null && "text" in (d as Record<string, unknown>)) {
+    const v = (d as Record<string, unknown>).text;
+    return typeof v === "string" ? v : "";
+  }
+  return "";
+}
 
 export default function TaskPanel({
   locale,
   dict,
+  currentUserId,
 }: {
   locale: Locale;
   dict: Dictionary;
+  currentUserId?: string;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -71,8 +107,14 @@ export default function TaskPanel({
   const taskId = searchParams.get("task");
   const [data, setData] = useState<PanelData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [isPending, startTransition] = useTransition();
   void isPending;
+
+  const reload = () => {
+    setReloadTick((t) => t + 1);
+    router.refresh();
+  };
 
   useEffect(() => {
     if (!taskId) {
@@ -81,7 +123,7 @@ export default function TaskPanel({
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/tasks/${taskId}`)
+    fetch(`/api/tasks/${taskId}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then((d: PanelData) => {
         if (!cancelled) setData(d);
@@ -95,7 +137,7 @@ export default function TaskPanel({
     return () => {
       cancelled = true;
     };
-  }, [taskId]);
+  }, [taskId, reloadTick]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -114,6 +156,25 @@ export default function TaskPanel({
   };
 
   if (!taskId) return null;
+
+  const L = {
+    description: locale === "ar" ? "الوصف" : "Description",
+    descriptionPlaceholder:
+      locale === "ar"
+        ? "اكتب وصفاً للمهمة…"
+        : "Write a task description…",
+    subtasks: locale === "ar" ? "المهام الفرعية" : "Subtasks",
+    addSubtask: locale === "ar" ? "أضف مهمة فرعية" : "Add a subtask",
+    addPerson: locale === "ar" ? "إضافة شخص" : "Add assignee",
+    sendComment: locale === "ar" ? "إرسال" : "Send",
+    commentPlaceholder:
+      locale === "ar" ? "أضف تعليقاً… (@ للإشارة)" : "Add a comment… (@ to mention)",
+    deleteComment: locale === "ar" ? "حذف التعليق" : "Delete comment",
+    deleteSubtask: locale === "ar" ? "حذف" : "Delete",
+    hours: dict.h,
+    estimate: dict.estimate,
+    hoursUnit: locale === "ar" ? "س" : "h",
+  };
 
   return (
     <div className="side" role="dialog" aria-label="Task details">
@@ -151,7 +212,10 @@ export default function TaskPanel({
                 marginInlineEnd: "auto",
               }}
             >
-              {data.project && (locale === "ar" ? data.project.name : data.project.nameEn ?? data.project.name)}
+              {data.project &&
+                (locale === "ar"
+                  ? data.project.name
+                  : data.project.nameEn ?? data.project.name)}
             </span>
           </>
         )}
@@ -190,24 +254,27 @@ export default function TaskPanel({
           <Icon name="close" size={12} />
         </button>
       </div>
+
       {data && (
         <div className="side-body">
           <TitleEditor task={data.task} />
 
           <div style={{ marginTop: 16 }}>
-            <SideRow k={dict.status.todo.replace(/./, "") || "Status"}>
+            <SideRow k={locale === "ar" ? "الحالة" : "Status"}>
               <StatusSelector task={data.task} dict={dict} />
             </SideRow>
             <SideRow k={locale === "ar" ? "الأولوية" : "Priority"}>
               <PrioritySelector task={data.task} dict={dict} />
             </SideRow>
             <SideRow k={dict.assignee}>
-              <AvatarStack users={data.assignees} max={4} />
-              {data.assignees.length === 0 && (
-                <span style={{ color: "var(--text-3)", fontSize: "var(--fs-sm)" }}>
-                  {dict.unassigned}
-                </span>
-              )}
+              <AssigneePicker
+                task={data.task}
+                assignees={data.assignees}
+                members={data.members}
+                dict={dict}
+                locale={locale}
+                onChanged={reload}
+              />
             </SideRow>
             <SideRow k={dict.due}>
               <DateEditor
@@ -219,13 +286,8 @@ export default function TaskPanel({
             <SideRow k={dict.progress}>
               <ProgressEditor task={data.task} />
             </SideRow>
-            <SideRow k={dict.estimate}>
-              <span
-                className="mono"
-                style={{ color: "var(--text-3)", fontSize: "var(--fs-sm)" }}
-              >
-                {data.task.estimatedHours ? `${data.task.estimatedHours}${dict.h}` : "—"}
-              </span>
+            <SideRow k={L.estimate}>
+              <EstimateEditor task={data.task} hoursUnit={L.hoursUnit} />
             </SideRow>
             {data.task.tags?.length ? (
               <SideRow k={locale === "ar" ? "الوسوم" : "Tags"}>
@@ -244,78 +306,59 @@ export default function TaskPanel({
             ) : null}
           </div>
 
-          <div
-            style={{
-              marginTop: 20,
-              paddingTop: 14,
-              borderTop: "1px solid var(--border)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "var(--fs-xs)",
-                color: "var(--text-3)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                marginBottom: 8,
-              }}
-            >
-              {dict.comments} · {data.comments.length}
-            </div>
-            {data.comments.map((c) => (
-              <div key={c.id} className="comment">
-                {c.author && <Avatar user={c.author} />}
-                <div className="c-body">
-                  <div className="c-head">
-                    <span className="who">
-                      {c.author
-                        ? locale === "ar"
-                          ? c.author.name
-                          : c.author.nameEn ?? c.author.name
-                        : "—"}
-                    </span>
-                    <span>
-                      {formatDistanceToNowStrict(new Date(c.createdAt), {
-                        locale: locale === "ar" ? arLocale : enUS,
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-                  <div className="c-text">{c.text}</div>
-                </div>
-              </div>
-            ))}
-            {data.comments.length === 0 && (
-              <div
-                style={{
-                  padding: 12,
-                  color: "var(--text-3)",
-                  fontSize: "var(--fs-sm)",
-                }}
-              >
-                {dict.empty}
-              </div>
-            )}
-            <textarea
-              placeholder={dict.addComment}
-              style={{
-                width: "100%",
-                minHeight: 60,
-                marginTop: 10,
-                padding: 8,
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-sm)",
-                background: "var(--panel-2)",
-                fontSize: "var(--fs-sm)",
-                color: "var(--text-3)",
-                resize: "vertical",
-              }}
-              disabled
-              title="Coming soon"
-            />
-          </div>
+          {/* Description */}
+          <SectionHeader label={L.description} />
+          <DescriptionEditor
+            task={data.task}
+            placeholder={L.descriptionPlaceholder}
+          />
+
+          {/* Subtasks / Checklist */}
+          <SectionHeader
+            label={`${L.subtasks} · ${data.checklist.filter((c) => c.done).length}/${data.checklist.length}`}
+          />
+          <ChecklistWidget
+            taskId={data.task.id}
+            items={data.checklist}
+            onChanged={reload}
+            addLabel={L.addSubtask}
+            deleteLabel={L.deleteSubtask}
+          />
+
+          {/* Comments */}
+          <SectionHeader label={`${dict.comments} · ${data.comments.length}`} />
+          <CommentsSection
+            taskId={data.task.id}
+            comments={data.comments}
+            currentUserId={currentUserId}
+            locale={locale}
+            placeholder={L.commentPlaceholder}
+            sendLabel={L.sendComment}
+            deleteLabel={L.deleteComment}
+            emptyLabel={dict.empty}
+            onChanged={reload}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 20,
+        paddingTop: 14,
+        borderTop: "1px solid var(--border)",
+        fontSize: "var(--fs-xs)",
+        color: "var(--text-3)",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        marginBottom: 8,
+      }}
+    >
+      {label}
     </div>
   );
 }
@@ -521,5 +564,463 @@ function ProgressEditor({ task }: { task: TaskDetail }) {
   );
 }
 
-// unused import suppressant
-void formatDate;
+function EstimateEditor({
+  task,
+  hoursUnit,
+}: {
+  task: TaskDetail;
+  hoursUnit: string;
+}) {
+  const initial = task.estimatedHours ? Number(task.estimatedHours) : 0;
+  const [value, setValue] = useState<string>(initial ? String(initial) : "");
+  const [isPending, startTransition] = useTransition();
+  const original = useRef<string>(value);
+
+  useEffect(() => {
+    const v = task.estimatedHours ? String(Number(task.estimatedHours)) : "";
+    setValue(v);
+    original.current = v;
+  }, [task.id, task.estimatedHours]);
+
+  const save = () => {
+    const trimmed = value.trim();
+    if (trimmed === original.current) return;
+    const n = trimmed === "" ? null : Number(trimmed);
+    if (n !== null && (Number.isNaN(n) || n < 0)) {
+      setValue(original.current);
+      return;
+    }
+    startTransition(async () => {
+      await updateEstimate({ taskId: task.id, hours: n });
+      original.current = trimmed;
+    });
+  };
+
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <input
+        type="number"
+        min={0}
+        step={0.5}
+        value={value}
+        placeholder="0"
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        disabled={isPending}
+        style={{
+          width: 64,
+          fontSize: "var(--fs-sm)",
+          color: "var(--text)",
+          background: "transparent",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-sm)",
+          padding: "2px 6px",
+          textAlign: "center",
+        }}
+      />
+      <span
+        className="mono"
+        style={{ fontSize: "var(--fs-sm)", color: "var(--text-3)" }}
+      >
+        {hoursUnit}
+      </span>
+    </span>
+  );
+}
+
+function AssigneePicker({
+  task,
+  assignees,
+  members,
+  dict,
+  locale,
+  onChanged,
+}: {
+  task: TaskDetail;
+  assignees: Assignee[];
+  members: Assignee[];
+  dict: Dictionary;
+  locale: Locale;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  const currentIds = new Set(assignees.map((a) => a.id));
+  const toggle = (uid: string) => {
+    const next = new Set(currentIds);
+    if (next.has(uid)) next.delete(uid);
+    else next.add(uid);
+    startTransition(async () => {
+      try {
+        await setTaskAssignees({
+          taskId: task.id,
+          userIds: Array.from(next),
+        });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  return (
+    <span
+      ref={ref}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        position: "relative",
+      }}
+    >
+      {assignees.length > 0 ? (
+        <button
+          type="button"
+          className="assignee-btn"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={dict.assignee}
+        >
+          <AvatarStack users={assignees} max={4} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn ghost sm"
+          onClick={() => setOpen((o) => !o)}
+          style={{ fontSize: "var(--fs-sm)", color: "var(--text-3)" }}
+        >
+          <Icon name="plus" size={10} />
+          <span style={{ marginInlineStart: 4 }}>{dict.unassigned}</span>
+        </button>
+      )}
+      {open && (
+        <div
+          className="popover"
+          role="listbox"
+          aria-label={dict.assignee}
+          style={{ insetInlineEnd: 0 }}
+        >
+          <div className="popover-head">
+            {locale === "ar" ? "اختر الأعضاء" : "Select members"}
+          </div>
+          {members.length === 0 && (
+            <div className="popover-empty">
+              {locale === "ar" ? "لا يوجد أعضاء" : "No members"}
+            </div>
+          )}
+          {members.map((m) => {
+            const active = currentIds.has(m.id);
+            return (
+              <button
+                key={m.id}
+                type="button"
+                disabled={isPending}
+                className={`popover-item${active ? " active" : ""}`}
+                onClick={() => toggle(m.id)}
+              >
+                <Avatar user={m} />
+                <span className="pi-name">
+                  {locale === "ar" ? m.name : m.nameEn ?? m.name}
+                </span>
+                {active && <Icon name="check" size={12} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </span>
+  );
+}
+
+function DescriptionEditor({
+  task,
+  placeholder,
+}: {
+  task: TaskDetail;
+  placeholder: string;
+}) {
+  const initial = descriptionText(task.description);
+  const [value, setValue] = useState(initial);
+  const [isPending, startTransition] = useTransition();
+  const original = useRef(initial);
+
+  useEffect(() => {
+    const next = descriptionText(task.description);
+    setValue(next);
+    original.current = next;
+  }, [task.id, task.description]);
+
+  const save = () => {
+    const next = value;
+    if (next === original.current) return;
+    startTransition(async () => {
+      try {
+        await updateTaskDescription({ taskId: task.id, description: next });
+        original.current = next;
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={save}
+      placeholder={placeholder}
+      disabled={isPending}
+      className="desc-editor"
+      rows={3}
+    />
+  );
+}
+
+function ChecklistWidget({
+  taskId,
+  items,
+  onChanged,
+  addLabel,
+  deleteLabel,
+}: {
+  taskId: string;
+  items: ChecklistItem[];
+  onChanged: () => void;
+  addLabel: string;
+  deleteLabel: string;
+}) {
+  const [local, setLocal] = useState<ChecklistItem[]>(items);
+  const [newText, setNewText] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => setLocal(items), [items]);
+
+  const onToggle = (item: ChecklistItem) => {
+    setLocal((xs) =>
+      xs.map((x) => (x.id === item.id ? { ...x, done: !x.done } : x))
+    );
+    startTransition(async () => {
+      try {
+        await toggleChecklistItem({ itemId: item.id, done: !item.done });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  const onDelete = (item: ChecklistItem) => {
+    setLocal((xs) => xs.filter((x) => x.id !== item.id));
+    startTransition(async () => {
+      try {
+        await deleteChecklistItem({ itemId: item.id });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  const onAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const content = newText.trim();
+    if (!content) return;
+    setNewText("");
+    startTransition(async () => {
+      try {
+        await addChecklistItem({ taskId, content });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  return (
+    <div className="checklist">
+      {local.map((item) => (
+        <div key={item.id} className="checklist-row">
+          <input
+            type="checkbox"
+            checked={item.done}
+            onChange={() => onToggle(item)}
+            disabled={isPending}
+            aria-label={item.content}
+          />
+          <span className={`cl-text${item.done ? " done" : ""}`}>
+            {item.content}
+          </span>
+          <button
+            type="button"
+            className="btn ghost icon sm cl-del"
+            aria-label={deleteLabel}
+            title={deleteLabel}
+            onClick={() => onDelete(item)}
+          >
+            <Icon name="trash" size={10} />
+          </button>
+        </div>
+      ))}
+      <form className="checklist-add" onSubmit={onAdd}>
+        <input
+          type="text"
+          value={newText}
+          onChange={(e) => setNewText(e.target.value)}
+          placeholder={addLabel}
+          maxLength={300}
+        />
+        <button
+          type="submit"
+          className="btn ghost icon sm"
+          disabled={!newText.trim() || isPending}
+          aria-label={addLabel}
+        >
+          <Icon name="plus" size={12} />
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function CommentsSection({
+  taskId,
+  comments,
+  currentUserId,
+  locale,
+  placeholder,
+  sendLabel,
+  deleteLabel,
+  emptyLabel,
+  onChanged,
+}: {
+  taskId: string;
+  comments: Comment[];
+  currentUserId?: string;
+  locale: Locale;
+  placeholder: string;
+  sendLabel: string;
+  deleteLabel: string;
+  emptyLabel: string;
+  onChanged: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = text.trim();
+    if (!body) return;
+    setText("");
+    startTransition(async () => {
+      try {
+        await addComment({ taskId, text: body });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  const onDelete = (commentId: string) => {
+    const msg =
+      locale === "ar"
+        ? "حذف هذا التعليق؟"
+        : "Delete this comment?";
+    if (!confirm(msg)) return;
+    startTransition(async () => {
+      try {
+        await deleteComment({ commentId });
+        onChanged();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  };
+
+  return (
+    <>
+      {comments.map((c) => (
+        <div key={c.id} className="comment">
+          {c.author && <Avatar user={c.author} />}
+          <div className="c-body">
+            <div className="c-head">
+              <span className="who">
+                {c.author
+                  ? locale === "ar"
+                    ? c.author.name
+                    : c.author.nameEn ?? c.author.name
+                  : "—"}
+              </span>
+              <span>
+                {formatDistanceToNowStrict(new Date(c.createdAt), {
+                  locale: locale === "ar" ? arLocale : enUS,
+                  addSuffix: true,
+                })}
+              </span>
+              {c.author && currentUserId === c.author.id && (
+                <button
+                  type="button"
+                  className="c-del"
+                  aria-label={deleteLabel}
+                  title={deleteLabel}
+                  onClick={() => onDelete(c.id)}
+                >
+                  <Icon name="trash" size={10} />
+                </button>
+              )}
+            </div>
+            <div className="c-text">{c.text}</div>
+          </div>
+        </div>
+      ))}
+      {comments.length === 0 && (
+        <div
+          style={{
+            padding: 12,
+            color: "var(--text-3)",
+            fontSize: "var(--fs-sm)",
+          }}
+        >
+          {emptyLabel}
+        </div>
+      )}
+      <form className="comment-form" onSubmit={onSubmit}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
+            }
+          }}
+          placeholder={placeholder}
+          rows={2}
+          maxLength={4000}
+        />
+        <div className="comment-form-actions">
+          <button
+            type="submit"
+            className="btn primary sm"
+            disabled={!text.trim() || isPending}
+          >
+            {sendLabel}
+          </button>
+        </div>
+      </form>
+    </>
+  );
+}
