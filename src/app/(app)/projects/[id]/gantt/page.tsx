@@ -1,3 +1,4 @@
+import type React from "react";
 import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/preferences";
 import { getDictionary } from "@/lib/i18n";
@@ -265,16 +266,7 @@ export default async function GanttPage({
                     >
                       {task.code}
                     </span>
-                    <span
-                      className="truncate"
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        color: "var(--text)",
-                        fontSize: "var(--fs-sm)",
-                      }}
-                      title={task.title}
-                    >
+                    <span className="gantt-row-title" title={task.title}>
                       {task.title}
                     </span>
                     {task.assignees.length > 0 && (
@@ -343,6 +335,16 @@ export default async function GanttPage({
                   const statusCls =
                     STATUS_CLS[task.status as TaskStatus] ?? "todo";
                   const bg = task.color ?? undefined;
+                  const INSIDE_THRESHOLD = 90;
+                  const showInside = w >= INSIDE_THRESHOLD;
+                  // External label: position right after bar, but flip to
+                  // before-the-bar when there isn't room on the right.
+                  const spaceAfter = width - (left + w);
+                  const extAfter = spaceAfter >= 80;
+                  const extStyle: React.CSSProperties = extAfter
+                    ? { insetInlineStart: left + w + 6 }
+                    : { insetInlineEnd: width - left + 6 };
+                  const dateRange = `${weekShort(start)} → ${weekShort(end)}`;
                   return (
                     <Link
                       key={task.id}
@@ -363,9 +365,9 @@ export default async function GanttPage({
                               }
                             : null),
                         }}
-                        title={`${task.code} · ${task.title}${synthetic ? (locale === "ar" ? " (تقديرية)" : " (estimated)") : ""}`}
+                        title={`${task.code} · ${task.title} · ${dateRange}${synthetic ? (locale === "ar" ? " (تقديرية)" : " (estimated)") : ""}`}
                       >
-                        {w > 42 && (
+                        {showInside && (
                           <span className="truncate gantt-bar-label">
                             {task.title}
                           </span>
@@ -377,6 +379,11 @@ export default async function GanttPage({
                           />
                         )}
                       </div>
+                      {!showInside && (
+                        <span className="gantt-bar-ext" style={extStyle}>
+                          {task.title}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

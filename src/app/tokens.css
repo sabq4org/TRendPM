@@ -821,8 +821,8 @@ a { color: inherit; text-decoration: none; }
 }
 .gantt-row {
   display: flex; align-items: center;
-  height: 32px;
-  padding: 0 12px;
+  min-height: 44px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border);
   font-size: var(--fs-sm);
   gap: 8px;
@@ -900,7 +900,8 @@ a { color: inherit; text-decoration: none; }
 .gantt-body { position: relative; }
 .gantt-track {
   position: relative;
-  height: 32px;
+  min-height: 44px;
+  height: 44px;
   border-bottom: 1px solid var(--border);
   background-image: repeating-linear-gradient(
     to right,
@@ -924,7 +925,7 @@ a { color: inherit; text-decoration: none; }
 
 .gantt-bar {
   position: absolute;
-  top: 7px; height: 18px;
+  top: 13px; height: 20px;
   border-radius: 4px;
   background: var(--accent);
   color: white;
@@ -947,6 +948,32 @@ a { color: inherit; text-decoration: none; }
   flex: 1; min-width: 0;
   position: relative; z-index: 1;
   pointer-events: none;
+}
+.gantt-bar-ext {
+  position: absolute;
+  top: 14px;
+  height: 18px;
+  line-height: 18px;
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-ar), var(--font-sans);
+}
+.gantt-row-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 .gantt-bar-fill {
   position: absolute;
