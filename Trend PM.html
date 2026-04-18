@@ -1,0 +1,2720 @@
+<!doctype html><html lang="ar" dir="rtl" data-theme="dark"><head><meta charset="utf-8"/><title>Trend PM</title><meta name="viewport" content="width=1440"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Readex+Pro:wght@300;400;500;600&family=Cairo:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>/* ========== Trend PM · Editorial dense ========== */
+:root {
+  --accent-h: 162;
+  --accent: oklch(0.72 0.14 var(--accent-h));
+  --accent-fg: oklch(0.22 0.05 var(--accent-h));
+  --accent-soft: oklch(0.72 0.14 var(--accent-h) / 0.12);
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --row: 32px;
+
+  --font-ar: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-en: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --fs-xxs: 10.5px;
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 13.5px;
+  --fs-lg: 15.5px;
+  --fs-xl: 19px;
+  --fs-2xl: 28px;
+}
+
+/* Dark (default) */
+[data-theme="dark"] {
+  --bg: #08090A;
+  --panel: #0C0D0F;
+  --panel-2: #101214;
+  --elevated: #14161A;
+  --hover: #181A1E;
+  --border: #1C1E22;
+  --border-strong: #262A2F;
+  --text: #E6E6E3;
+  --text-2: #A8AAA6;
+  --text-3: #6E7074;
+  --text-4: #484A4E;
+
+  --s-todo: #71717A;
+  --s-progress: #8B5CF6;
+  --s-review: #38BDF8;
+  --s-blocked: #F43F5E;
+  --s-done: oklch(0.72 0.14 var(--accent-h));
+  --s-late: #F59E0B;
+
+  --p-low: #71717A;
+  --p-med: #38BDF8;
+  --p-high: #F59E0B;
+  --p-crit: #F43F5E;
+}
+
+[data-theme="light"] {
+  --bg: #FBFBFA;
+  --panel: #FFFFFF;
+  --panel-2: #F7F7F5;
+  --elevated: #FFFFFF;
+  --hover: #F2F2F0;
+  --border: #E6E5E0;
+  --border-strong: #D4D3CE;
+  --text: #16181B;
+  --text-2: #52555A;
+  --text-3: #7A7D82;
+  --text-4: #ABADB1;
+
+  --s-todo: #6B6F76;
+  --s-progress: #7C3AED;
+  --s-review: #0284C7;
+  --s-blocked: #E11D48;
+  --s-done: oklch(0.55 0.12 var(--accent-h));
+  --s-late: #D97706;
+
+  --p-low: #6B6F76;
+  --p-med: #0284C7;
+  --p-high: #D97706;
+  --p-crit: #E11D48;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-ar);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+body { overflow: hidden; }
+
+[dir="rtl"] { font-family: var(--font-ar); }
+[dir="ltr"] { font-family: var(--font-en); }
+
+.mono, .num { font-family: var(--font-mono); font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+.en { font-family: var(--font-en); }
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+input, textarea { font: inherit; color: inherit; background: none; border: 0; outline: 0; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Layout ---------- */
+.app {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  grid-template-rows: 40px 1fr;
+  height: 100vh;
+  width: 100vw;
+}
+[dir="rtl"] .app { grid-template-columns: 232px 1fr; }
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  padding: 0 10px;
+  gap: 8px;
+  height: 40px;
+  position: relative;
+  z-index: 20;
+}
+.sidebar {
+  border-inline-end: 1px solid var(--border);
+  background: var(--panel);
+  overflow-y: auto;
+  padding: 10px 8px 20px;
+}
+.main {
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+}
+
+/* ---------- Atoms ---------- */
+.hairline { border-top: 1px solid var(--border); }
+.v-hairline { border-inline-start: 1px solid var(--border); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 7px;
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.chip.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.chip .dot { width: 6px; height: 6px; border-radius: 2px; flex-shrink: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  border: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.btn:hover { background: var(--elevated); border-color: var(--border-strong); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 500; }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+.btn.ghost:hover { background: var(--hover); color: var(--text); }
+.btn.sm { height: 22px; padding: 0 8px; font-size: var(--fs-xs); }
+.btn.icon { width: 26px; padding: 0; justify-content: center; }
+.btn.icon.sm { width: 22px; }
+
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.label {
+  font-size: var(--fs-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  font-weight: 500;
+}
+[dir="rtl"] .label { letter-spacing: 0; }
+
+.divider-h { height: 1px; background: var(--border); }
+
+.avatar {
+  width: 20px; height: 20px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  font-family: var(--font-en);
+  font-weight: 500;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.avatar.md { width: 24px; height: 24px; font-size: 11px; }
+.avatar.lg { width: 32px; height: 32px; font-size: 12px; }
+.avatar-stack { display: inline-flex; }
+.avatar-stack .avatar + .avatar { margin-inline-start: -6px; }
+
+/* ---------- Status dots ---------- */
+.sdot {
+  width: 10px; height: 10px; border-radius: 999px;
+  border: 2px solid currentColor;
+  display: inline-block; flex-shrink: 0;
+  background: transparent;
+  box-sizing: border-box;
+}
+.sdot.todo { color: var(--s-todo); }
+.sdot.progress { color: var(--s-progress); background: conic-gradient(currentColor 50%, transparent 50%); border-color: currentColor; }
+.sdot.review { color: var(--s-review); background: conic-gradient(currentColor 75%, transparent 75%); }
+.sdot.blocked { color: var(--s-blocked); background: currentColor; }
+.sdot.done { color: var(--s-done); background: currentColor; }
+
+.pdot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.pdot.low { background: var(--p-low); }
+.pdot.med { background: var(--p-med); }
+.pdot.high { background: var(--p-high); }
+.pdot.crit { background: var(--p-crit); }
+
+/* ---------- Sidebar ---------- */
+.sb-section { margin-top: 14px; }
+.sb-section:first-child { margin-top: 0; }
+.sb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 6px 4px;
+  color: var(--text-3);
+  font-size: var(--fs-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+[dir="rtl"] .sb-head { letter-spacing: 0; }
+.sb-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 8px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-item:hover { background: var(--hover); color: var(--text); }
+.sb-item.active { background: var(--hover); color: var(--text); }
+.sb-item .icon { width: 14px; height: 14px; color: var(--text-3); flex-shrink: 0; }
+.sb-item.active .icon { color: var(--accent); }
+.sb-item .tail { margin-inline-start: auto; font-size: var(--fs-xxs); color: var(--text-4); font-family: var(--font-mono); }
+
+.sb-proj-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ---------- Topbar ---------- */
+.brand {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  padding: 0 6px;
+  min-width: 216px;
+}
+.brand .logo {
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent-fg);
+  font-family: var(--font-en);
+  font-weight: 700;
+  font-size: 11px;
+}
+.crumb {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.crumb .sep { color: var(--text-4); }
+.crumb .cur { color: var(--text); }
+
+.topbar .spacer { flex: 1; }
+
+.search-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  min-width: 260px;
+  cursor: pointer;
+}
+.search-pill:hover { border-color: var(--border-strong); }
+.search-pill .spacer { flex: 1; }
+
+/* ---------- Content subheader ---------- */
+.subhead {
+  height: 44px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex-shrink: 0;
+}
+.subhead h1 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.subhead .sub {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+.toolbar {
+  height: 36px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex-shrink: 0;
+}
+
+.tabs {
+  display: inline-flex; gap: 0;
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 10px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  border: 1px solid transparent;
+}
+.tab:hover { color: var(--text); background: var(--hover); }
+.tab.active { color: var(--text); background: var(--hover); border-color: var(--border); }
+.tab .count { color: var(--text-4); font-family: var(--font-mono); font-size: var(--fs-xxs); }
+
+.scroll { overflow: auto; flex: 1; min-height: 0; }
+
+/* ---------- Panels ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.panel-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-head h3 {
+  margin: 0; font-size: var(--fs-sm); font-weight: 600;
+}
+.panel-head .tail { margin-inline-start: auto; color: var(--text-3); font-size: var(--fs-xs); }
+.panel-body { padding: 12px; }
+
+/* ---------- Dashboard grid ---------- */
+.dash {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+  min-height: 100%;
+}
+.col-12 { grid-column: span 12; }
+.col-8 { grid-column: span 8; }
+.col-6 { grid-column: span 6; }
+.col-4 { grid-column: span 4; }
+.col-3 { grid-column: span 3; }
+
+.kpi {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  display: flex; flex-direction: column; gap: 4px;
+  min-height: 82px;
+}
+.kpi .kpi-label { font-size: var(--fs-xxs); text-transform: uppercase; color: var(--text-3); letter-spacing: 0.06em; }
+[dir="rtl"] .kpi .kpi-label { letter-spacing: 0; }
+.kpi .kpi-value {
+  font-family: var(--font-en);
+  font-size: var(--fs-2xl);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-feature-settings: "tnum";
+}
+.kpi .kpi-sub {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  margin-top: auto;
+}
+.kpi .trend-up { color: var(--accent); }
+.kpi .trend-down { color: var(--s-blocked); }
+
+/* ---------- Table ---------- */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.tbl th, .tbl td {
+  text-align: start;
+  padding: 0 10px;
+  height: var(--row);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tbl th {
+  font-weight: 500;
+  color: var(--text-3);
+  font-size: var(--fs-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--panel);
+  position: sticky; top: 0; z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+[dir="rtl"] .tbl th { letter-spacing: 0; }
+.tbl tr:hover td { background: var(--hover); }
+.tbl td.num, .tbl th.num { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+.tbl td.tight { padding: 0 6px; }
+
+.progress {
+  position: relative;
+  height: 5px;
+  background: var(--hover);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+  min-width: 60px;
+}
+.progress > i {
+  position: absolute; inset-inline-start: 0; top: 0; bottom: 0;
+  background: var(--accent);
+  display: block;
+}
+.progress.thin { height: 3px; }
+
+/* ---------- Kanban ---------- */
+.kanban {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 280px;
+  gap: 12px;
+  padding: 12px 16px;
+  height: 100%;
+  overflow-x: auto;
+  align-content: start;
+}
+.col {
+  display: flex; flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 100%;
+  min-height: 200px;
+}
+.col-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.col-head .count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xxs);
+  color: var(--text-3);
+  margin-inline-start: auto;
+}
+.col-body {
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.col-body.drop-over { background: var(--accent-soft); }
+
+.tcard {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 9px;
+  display: flex; flex-direction: column; gap: 6px;
+  cursor: grab;
+  transition: border-color 0.1s, background 0.1s;
+}
+.tcard:hover { border-color: var(--border-strong); }
+.tcard:active { cursor: grabbing; }
+.tcard.dragging { opacity: 0.4; }
+.tcard .tcard-head {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xxs);
+  color: var(--text-3);
+}
+.tcard .tcard-head .tail { margin-inline-start: auto; display: flex; gap: 4px; align-items: center; }
+.tcard .tcard-title {
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tcard .tcard-meta {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-xxs);
+  color: var(--text-3);
+}
+.tcard .tcard-meta .tail { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
+
+/* ---------- Side panel ---------- */
+.side {
+  position: absolute; top: 40px; bottom: 0;
+  inset-inline-end: 0;
+  width: 440px;
+  background: var(--panel);
+  border-inline-start: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 30;
+  animation: slideIn 0.18s ease-out;
+}
+[dir="ltr"] .side { animation: slideInLtr 0.18s ease-out; }
+@keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideInLtr { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.side-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.side-body {
+  flex: 1; overflow-y: auto;
+  padding: 14px 16px;
+}
+.side-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: var(--fs-sm);
+  align-items: center;
+}
+.side-row > .k { color: var(--text-3); font-size: var(--fs-xs); }
+.side-row > .v { color: var(--text); }
+
+.comment {
+  display: flex; gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.comment .c-body { flex: 1; }
+.comment .c-head { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-3); }
+.comment .c-head .who { color: var(--text); font-weight: 500; }
+.comment .c-text { margin-top: 4px; font-size: var(--fs-sm); color: var(--text); }
+
+/* ---------- Command palette ---------- */
+.cmdk-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 13vh;
+}
+.cmdk {
+  width: 560px; max-width: 90vw;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+.cmdk-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font-size: var(--fs-md);
+  border-bottom: 1px solid var(--border);
+}
+.cmdk-list { max-height: 360px; overflow-y: auto; padding: 6px; }
+.cmdk-group-label { padding: 8px 10px 4px; font-size: var(--fs-xxs); text-transform: uppercase; color: var(--text-3); letter-spacing: 0.06em; }
+.cmdk-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 10px; height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2); font-size: var(--fs-sm);
+}
+.cmdk-item.active { background: var(--hover); color: var(--text); }
+.cmdk-item .tail { margin-inline-start: auto; color: var(--text-4); font-size: var(--fs-xxs); font-family: var(--font-mono); }
+
+/* ---------- Menus / dropdowns ---------- */
+.menu {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 50;
+}
+.menu-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 8px; height: 28px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.menu-item:hover { background: var(--hover); color: var(--text); }
+.menu-item.active { color: var(--text); }
+.menu-item .tail { margin-inline-start: auto; color: var(--text-4); font-family: var(--font-mono); font-size: var(--fs-xxs); }
+
+/* ---------- Gantt ---------- */
+.gantt {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: 100%;
+  overflow: auto;
+  background: var(--panel);
+}
+.gantt-left, .gantt-right { min-height: 100%; }
+.gantt-left {
+  border-inline-end: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky; inset-inline-start: 0;
+  z-index: 2;
+}
+.gantt-row {
+  display: flex; align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  gap: 8px;
+  white-space: nowrap;
+}
+.gantt-row.group { background: var(--panel-2); font-weight: 500; color: var(--text-2); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.04em; }
+[dir="rtl"] .gantt-row.group { letter-spacing: 0; }
+
+.gantt-header {
+  display: flex;
+  height: 30px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--panel); z-index: 3;
+}
+.gantt-header .gh-cell {
+  border-inline-end: 1px solid var(--border);
+  font-size: var(--fs-xxs);
+  color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+}
+.gantt-body { position: relative; }
+.gantt-track {
+  position: relative;
+  height: 30px;
+  border-bottom: 1px solid var(--border);
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent 59px, var(--border) 59px, var(--border) 60px);
+}
+[dir="rtl"] .gantt-track {
+  background-image: repeating-linear-gradient(to left, transparent 0, transparent 59px, var(--border) 59px, var(--border) 60px);
+}
+.gantt-bar {
+  position: absolute;
+  top: 6px; height: 18px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: var(--fs-xxs);
+  display: flex; align-items: center; padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.gantt-bar.todo { background: var(--s-todo); color: white; }
+.gantt-bar.progress { background: var(--s-progress); color: white; }
+.gantt-bar.review { background: var(--s-review); color: white; }
+.gantt-bar.blocked { background: var(--s-blocked); color: white; }
+.gantt-bar.done { background: var(--s-done); color: white; }
+.gantt-bar.late { outline: 1px dashed var(--s-late); outline-offset: 1px; }
+
+.gantt-today {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 0;
+  border-inline-start: 1px dashed var(--s-late);
+  pointer-events: none;
+  z-index: 1;
+}
+.gantt-today::after {
+  content: "TODAY";
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--s-late);
+}
+
+/* ---------- Calendar ---------- */
+.cal {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding: 12px 16px;
+  gap: 0;
+}
+.cal-head {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+}
+.cal-head > div {
+  padding: 6px 10px;
+  font-size: var(--fs-xxs);
+  text-transform: uppercase;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+  border-inline-end: 1px solid var(--border);
+}
+[dir="rtl"] .cal-head > div { letter-spacing: 0; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  border-inline-start: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+.cal-cell {
+  border-inline-end: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 6px;
+  display: flex; flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  overflow: hidden;
+}
+.cal-cell.other { background: var(--panel-2); }
+.cal-cell.today .d { color: var(--accent); font-weight: 600; }
+.cal-cell .d { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-3); }
+.cal-cell .ev {
+  font-size: var(--fs-xxs);
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: var(--hover);
+  color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border-inline-start: 2px solid var(--s-todo);
+}
+.cal-cell .ev.progress { border-color: var(--s-progress); color: var(--text); }
+.cal-cell .ev.review { border-color: var(--s-review); color: var(--text); }
+.cal-cell .ev.done { border-color: var(--s-done); color: var(--text-3); text-decoration: line-through; }
+.cal-cell .ev.blocked { border-color: var(--s-blocked); color: var(--text); }
+
+/* ---------- Workload ---------- */
+.wl-head { display: flex; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); gap: 2px; }
+.wl-head .wl-name { flex: 0 0 220px; font-size: var(--fs-xs); color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.wl-head .wl-day {
+  flex: 1 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xxs);
+  color: var(--text-3);
+  text-align: center;
+  border-inline-start: 1px solid var(--border);
+  padding: 0 6px;
+}
+.wl-row { display: flex; padding: 6px 16px; border-bottom: 1px solid var(--border); align-items: stretch; min-height: 64px; }
+.wl-row .wl-name {
+  flex: 0 0 220px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-sm);
+}
+.wl-row .wl-name .meta { color: var(--text-3); font-size: var(--fs-xs); }
+.wl-row .wl-day {
+  flex: 1 0 0;
+  border-inline-start: 1px solid var(--border);
+  padding: 4px 4px;
+  display: flex; flex-direction: column; gap: 2px;
+  position: relative;
+}
+.wl-bar {
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 4px;
+  border-radius: 2px;
+  background: var(--hover);
+  color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border-inline-start: 2px solid var(--accent);
+}
+.wl-bar.over { background: color-mix(in oklch, var(--s-blocked) 20%, transparent); border-color: var(--s-blocked); color: var(--text); }
+.wl-load {
+  position: absolute;
+  top: 2px; inset-inline-end: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-4);
+}
+.wl-load.over { color: var(--s-blocked); }
+
+/* ---------- Chart ---------- */
+.chart { display: block; }
+.chart-axis { font-family: var(--font-mono); font-size: 9px; fill: var(--text-4); }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-line { fill: none; stroke-width: 1.5; }
+.chart-area { opacity: 0.15; }
+
+/* ---------- Activity ---------- */
+.act {
+  display: flex; gap: 8px;
+  padding: 6px 0;
+  font-size: var(--fs-xs);
+}
+.act .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--text-4); margin-top: 8px; flex-shrink: 0; }
+.act .act-body { flex: 1; color: var(--text-2); }
+.act .act-body .who { color: var(--text); font-weight: 500; }
+.act .act-body .when { color: var(--text-4); font-family: var(--font-mono); font-size: var(--fs-xxs); margin-inline-start: 4px; }
+
+/* ---------- Scrollbar ---------- */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ---------- Tweaks panel ---------- */
+.tweaks {
+  position: fixed;
+  bottom: 14px;
+  inset-inline-end: 14px;
+  width: 260px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  z-index: 90;
+  font-size: var(--fs-sm);
+  overflow: hidden;
+}
+.tweaks-head {
+  display: flex; align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+[dir="rtl"] .tweaks-head { letter-spacing: 0; }
+.tweaks-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.tw-row { display: flex; align-items: center; gap: 10px; }
+.tw-row > .k { flex: 1; color: var(--text-2); }
+.tw-swatches { display: flex; gap: 4px; }
+.tw-sw {
+  width: 20px; height: 20px; border-radius: 4px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.tw-sw.active { outline: 1px solid var(--text); outline-offset: 1px; }
+.tw-seg {
+  display: inline-flex;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tw-seg button {
+  padding: 2px 8px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.tw-seg button.active { background: var(--panel); color: var(--text); }
+
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* helpers */
+.flex { display: flex; }
+.row { display: flex; align-items: center; gap: 6px; }
+.col-flex { display: flex; flex-direction: column; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-1 { gap: 4px; }
+.mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
+.muted { color: var(--text-3); }
+.muted-2 { color: var(--text-4); }
+.nowrap { white-space: nowrap; }
+.flex-1 { flex: 1; }
+.text-xs { font-size: var(--fs-xs); }
+.text-sm { font-size: var(--fs-sm); }
+.text-xxs { font-size: var(--fs-xxs); }
+
+/* focus */
+*:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 3px; }
+</style></head><body><div id="root"></div>
+<script>window.addEventListener('error', e => { document.body.insertAdjacentHTML('afterbegin', '<pre style=color:#f00;padding:20px;font:11px monospace;background:#000;position:fixed;top:0;left:0;right:0;z-index:9999;white-space:pre-wrap>'+(e.message||'err')+' @ '+(e.filename||'')+':'+(e.lineno||0)+'</pre>'); });</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>/* global React */
+// Trend PM — seed data (شركة ترند التقنية)
+
+const TEAM = [
+  { id: "u1", name: "سارة الراشد", en: "Sarah Al-Rashed", role: "Product Manager", initials: "SR", hue: 180 },
+  { id: "u2", name: "عمر الزهراني", en: "Omar Al-Zahrani", role: "Tech Lead", initials: "OZ", hue: 30 },
+  { id: "u3", name: "ليلى الحربي", en: "Layla Al-Harbi", role: "Senior Backend", initials: "LH", hue: 320 },
+  { id: "u4", name: "يوسف العتيبي", en: "Youssef Al-Otaibi", role: "Frontend Dev", initials: "YO", hue: 260 },
+  { id: "u5", name: "مريم الشمري", en: "Maryam Al-Shammari", role: "UI/UX Designer", initials: "MS", hue: 140 },
+  { id: "u6", name: "خالد القحطاني", en: "Khaled Al-Qahtani", role: "DevOps", initials: "KQ", hue: 210 },
+  { id: "u7", name: "نورة السبيعي", en: "Noura Al-Subaie", role: "QA Engineer", initials: "NS", hue: 350 },
+  { id: "u8", name: "فيصل الدوسري", en: "Faisal Al-Dosari", role: "Backend Dev", initials: "FD", hue: 80 },
+  { id: "u9", name: "ريم المطيري", en: "Reem Al-Mutairi", role: "Data Engineer", initials: "RM", hue: 110 },
+];
+
+const PROJECTS = [
+  {
+    id: "p1", key: "PAY", name: "بوابة الدفع الإلكتروني", en: "Payment Gateway v2",
+    client: "بنك الإتحاد", pm: "u1", color: "#8B5CF6",
+    status: "Active", priority: "Critical",
+    start: "2026-02-15", due: "2026-05-30",
+    budget: 420000, spent: 268000,
+    tags: ["Fintech", "Backend"],
+    progress: 62,
+  },
+  {
+    id: "p2", key: "CRM", name: "نظام إدارة العملاء الموحّد", en: "Unified CRM",
+    client: "ترند — داخلي", pm: "u2", color: "#38BDF8",
+    status: "Active", priority: "High",
+    start: "2026-01-08", due: "2026-06-20",
+    budget: 310000, spent: 149000,
+    tags: ["Internal", "Fullstack"],
+    progress: 48,
+  },
+  {
+    id: "p3", key: "DSH", name: "لوحة التحليلات اللحظية", en: "Realtime Analytics Dashboard",
+    client: "مجموعة الأفق", pm: "u1", color: "#F59E0B",
+    status: "Active", priority: "High",
+    start: "2026-03-01", due: "2026-07-10",
+    budget: 280000, spent: 92000,
+    tags: ["Data", "Frontend"],
+    progress: 33,
+  },
+  {
+    id: "p4", key: "MOB", name: "تطبيق iOS — الإصدار الثالث", en: "iOS App v3",
+    client: "ترند — عام", pm: "u5", color: "#10B981",
+    status: "Active", priority: "Medium",
+    start: "2026-02-01", due: "2026-05-15",
+    budget: 180000, spent: 124000,
+    tags: ["Mobile", "iOS"],
+    progress: 71,
+  },
+  {
+    id: "p5", key: "INF", name: "ترقية البنية السحابية", en: "Cloud Infra Upgrade",
+    client: "ترند — داخلي", pm: "u6", color: "#F43F5E",
+    status: "On Hold", priority: "Medium",
+    start: "2026-01-20", due: "2026-04-30",
+    budget: 140000, spent: 86000,
+    tags: ["DevOps", "Infra"],
+    progress: 40,
+  },
+  {
+    id: "p6", key: "DOC", name: "بوابة التوثيق للمطورين", en: "Developer Docs Portal",
+    client: "ترند — عام", pm: "u4", color: "#06B6D4",
+    status: "Planning", priority: "Low",
+    start: "2026-04-10", due: "2026-06-30",
+    budget: 60000, spent: 0,
+    tags: ["Docs"],
+    progress: 8,
+  },
+];
+
+// Status: todo | progress | review | blocked | done
+// Priority: low | med | high | crit
+function T(id, proj, title, opts = {}) {
+  return {
+    id,
+    projectId: proj,
+    title,
+    status: opts.s || "todo",
+    priority: opts.p || "med",
+    assignees: opts.a || [],
+    due: opts.due,
+    start: opts.start,
+    est: opts.est || 0,
+    spent: opts.spent || 0,
+    progress: opts.prog ?? 0,
+    tags: opts.tags || [],
+    comments: opts.comments || 0,
+    attachments: opts.att || 0,
+    deps: opts.deps || [],
+    parent: opts.parent || null,
+    description: opts.desc || "",
+    subtasks: opts.subtasks || [],
+    createdAt: opts.createdAt || "2026-03-01",
+  };
+}
+
+const TASKS = [
+  // PAY
+  T("PAY-12", "p1", "إعادة هيكلة خدمة تفويض البطاقات", { s: "progress", p: "crit", a: ["u2", "u8"], start: "2026-04-06", due: "2026-04-22", est: 40, spent: 26, prog: 65, tags: ["backend", "security"], comments: 8, att: 2, deps: [] }),
+  T("PAY-13", "p1", "تكامل بوابة مدى — اختبار التشفير", { s: "review", p: "crit", a: ["u2"], start: "2026-04-10", due: "2026-04-19", est: 16, spent: 18, prog: 100, tags: ["backend"], comments: 12, att: 5 }),
+  T("PAY-14", "p1", "تصميم شاشة الدفع — حالات الخطأ", { s: "progress", p: "high", a: ["u5"], start: "2026-04-08", due: "2026-04-24", est: 20, spent: 11, prog: 55, tags: ["design"], comments: 3 }),
+  T("PAY-15", "p1", "إعداد بيئة الاختبار للعميل", { s: "blocked", p: "high", a: ["u6"], start: "2026-04-12", due: "2026-04-17", est: 8, spent: 6, prog: 40, tags: ["devops"], comments: 5, deps: ["PAY-12"] }),
+  T("PAY-16", "p1", "توثيق API للتكامل الخارجي", { s: "todo", p: "med", a: ["u8"], start: "2026-04-22", due: "2026-05-02", est: 12, prog: 0, tags: ["docs"] }),
+  T("PAY-17", "p1", "اختبار الحمل — 10k req/s", { s: "todo", p: "high", a: ["u7", "u6"], start: "2026-05-01", due: "2026-05-10", est: 24, prog: 0, tags: ["qa"] }),
+  T("PAY-18", "p1", "معالجة حالة الاسترداد الجزئي", { s: "todo", p: "med", a: ["u2"], start: "2026-05-05", due: "2026-05-15", est: 16, prog: 0, tags: ["backend"] }),
+  T("PAY-19", "p1", "مراجعة أمنية خارجية", { s: "todo", p: "crit", a: [], start: "2026-05-20", due: "2026-05-28", est: 32, prog: 0, tags: ["security"] }),
+  T("PAY-10", "p1", "ترحيل قاعدة البيانات إلى Postgres 17", { s: "done", p: "high", a: ["u9"], start: "2026-03-02", due: "2026-03-18", est: 24, spent: 22, prog: 100 }),
+  T("PAY-11", "p1", "إعداد مخطط العلاقات للمعاملات", { s: "done", p: "high", a: ["u8"], start: "2026-03-15", due: "2026-03-28", est: 16, spent: 14, prog: 100 }),
+  T("PAY-20", "p1", "إصلاح تسريب ذاكرة في العامل الخلفي", { s: "progress", p: "high", a: ["u2"], start: "2026-04-14", due: "2026-04-16", est: 6, spent: 5, prog: 75, tags: ["bug"], comments: 4 }),
+
+  // CRM
+  T("CRM-22", "p2", "نموذج إضافة جهة اتصال — تحقق Zod", { s: "progress", p: "med", a: ["u4"], start: "2026-04-08", due: "2026-04-20", est: 14, spent: 8, prog: 55, tags: ["frontend"], comments: 2 }),
+  T("CRM-23", "p2", "Import من Excel — مطابقة الحقول", { s: "review", p: "high", a: ["u4", "u8"], start: "2026-04-05", due: "2026-04-18", est: 20, spent: 22, prog: 100, tags: ["frontend", "backend"], comments: 6, att: 3 }),
+  T("CRM-24", "p2", "فلاتر متقدّمة + حفظ الاستعلامات", { s: "todo", p: "med", a: ["u4"], start: "2026-04-22", due: "2026-05-05", est: 18, prog: 0 }),
+  T("CRM-25", "p2", "تكامل مع الواتساب الرسمي", { s: "blocked", p: "high", a: ["u2"], start: "2026-04-12", due: "2026-04-15", est: 12, spent: 4, prog: 30, deps: ["CRM-23"], comments: 7 }),
+  T("CRM-26", "p2", "تصميم صفحة العميل — الجدول الزمني", { s: "progress", p: "med", a: ["u5"], start: "2026-04-10", due: "2026-04-24", est: 16, spent: 9, prog: 50 }),
+  T("CRM-27", "p2", "تقارير المبيعات الشهرية", { s: "todo", p: "low", a: ["u9"], start: "2026-05-01", due: "2026-05-20", est: 24, prog: 0 }),
+  T("CRM-20", "p2", "إعداد نموذج البيانات الأوّلي", { s: "done", p: "high", a: ["u2"], start: "2026-01-20", due: "2026-02-10", est: 30, spent: 28, prog: 100 }),
+  T("CRM-21", "p2", "Auth + Workspaces", { s: "done", p: "crit", a: ["u2", "u8"], start: "2026-02-05", due: "2026-02-28", est: 40, spent: 45, prog: 100 }),
+
+  // DSH
+  T("DSH-8", "p3", "مخطط البيانات اللحظية — Kafka", { s: "progress", p: "high", a: ["u9", "u6"], start: "2026-04-02", due: "2026-04-25", est: 32, spent: 18, prog: 45 }),
+  T("DSH-9", "p3", "Widget محرر السحب والإفلات", { s: "progress", p: "high", a: ["u4"], start: "2026-04-05", due: "2026-04-28", est: 28, spent: 14, prog: 40, comments: 3 }),
+  T("DSH-10", "p3", "مخطط التدفق الجغرافي", { s: "review", p: "med", a: ["u5", "u4"], start: "2026-04-01", due: "2026-04-16", est: 14, spent: 16, prog: 100, comments: 4 }),
+  T("DSH-11", "p3", "تصدير PDF/Excel", { s: "todo", p: "med", a: ["u4"], start: "2026-04-28", due: "2026-05-10", est: 12, prog: 0 }),
+  T("DSH-12", "p3", "نظام التنبيهات — القواعد", { s: "todo", p: "high", a: ["u8"], start: "2026-05-01", due: "2026-05-25", est: 36, prog: 0 }),
+  T("DSH-13", "p3", "اختبار الأداء على 1M نقطة", { s: "todo", p: "high", a: ["u7"], start: "2026-05-20", due: "2026-06-05", est: 24, prog: 0 }),
+  T("DSH-7", "p3", "دراسة المتطلبات + Wireframes", { s: "done", p: "high", a: ["u1", "u5"], start: "2026-03-01", due: "2026-03-20", est: 40, spent: 36, prog: 100 }),
+
+  // MOB
+  T("MOB-18", "p4", "شاشة التسجيل — OAuth Apple", { s: "review", p: "high", a: ["u5"], start: "2026-04-06", due: "2026-04-18", est: 16, spent: 15, prog: 100, comments: 5 }),
+  T("MOB-19", "p4", "إشعارات Push — APNs", { s: "progress", p: "med", a: ["u6"], start: "2026-04-10", due: "2026-04-22", est: 12, spent: 7, prog: 60 }),
+  T("MOB-20", "p4", "وضع داكن — مراجعة التباين", { s: "progress", p: "low", a: ["u5"], start: "2026-04-08", due: "2026-04-20", est: 10, spent: 5, prog: 50 }),
+  T("MOB-21", "p4", "إصلاح تعطّل عند الشبكة البطيئة", { s: "blocked", p: "crit", a: [], start: "2026-04-12", due: "2026-04-14", est: 8, spent: 3, prog: 25, tags: ["bug"], comments: 9 }),
+  T("MOB-22", "p4", "إعداد Release للمتجر", { s: "todo", p: "high", a: ["u6"], start: "2026-05-01", due: "2026-05-12", est: 10, prog: 0 }),
+
+  // INF
+  T("INF-5", "p5", "ترحيل إلى Kubernetes 1.30", { s: "blocked", p: "high", a: ["u6"], start: "2026-03-20", due: "2026-04-10", est: 50, spent: 38, prog: 70, comments: 6 }),
+  T("INF-6", "p5", "إعادة هيكلة الـ CI/CD", { s: "progress", p: "med", a: ["u6"], start: "2026-04-01", due: "2026-04-25", est: 30, spent: 16, prog: 55 }),
+  T("INF-7", "p5", "مراجعة تكلفة السحابة", { s: "todo", p: "low", a: ["u6"], start: "2026-04-20", due: "2026-05-05", est: 12, prog: 0 }),
+
+  // DOC
+  T("DOC-2", "p6", "اختيار محرك التوثيق (Nextra/Docusaurus)", { s: "todo", p: "med", a: ["u4"], start: "2026-04-15", due: "2026-04-22", est: 4, prog: 0 }),
+  T("DOC-3", "p6", "تصميم الهوية البصرية للبوابة", { s: "todo", p: "low", a: ["u5"], start: "2026-04-20", due: "2026-05-05", est: 16, prog: 0 }),
+];
+
+const ACTIVITY = [
+  { who: "u2", action: "أغلق مهمة", target: "PAY-13 تكامل بوابة مدى", when: "قبل 12 د", type: "done" },
+  { who: "u4", action: "علّق على", target: "CRM-23 Import من Excel", when: "قبل 28 د", type: "comment" },
+  { who: "u6", action: "حدّث حالة", target: "INF-5 إلى محظورة", when: "قبل ساعة", type: "blocked" },
+  { who: "u1", action: "أنشأت مهمة", target: "PAY-20 إصلاح تسريب الذاكرة", when: "قبل ساعتين", type: "created" },
+  { who: "u5", action: "رفعت مرفقاً على", target: "MOB-18 شاشة التسجيل", when: "قبل 3 س", type: "attachment" },
+  { who: "u8", action: "أسندت مهمة إلى عمر", target: "PAY-12", when: "قبل 5 س", type: "assign" },
+  { who: "u9", action: "أغلقت مهمة", target: "PAY-10 ترحيل Postgres", when: "أمس", type: "done" },
+  { who: "u7", action: "أضافت مراجعة على", target: "DSH-10", when: "أمس", type: "review" },
+];
+
+const COMMENTS_BY_TASK = {
+  "PAY-12": [
+    { u: "u2", when: "قبل 3 س", text: "بدأت بإعادة هيكلة الخدمة. أحتاج مراجعة من @ليلى الحربي على تصميم الـ middleware." },
+    { u: "u3", when: "قبل ساعتين", text: "شفت الـ PR. أقترح فصل منطق التوقيع في module مستقل. التعليقات على GitHub." },
+    { u: "u2", when: "قبل 45 د", text: "تمام، سأطبّق التعديلات وأرفع نسخة جديدة قبل نهاية اليوم." },
+  ],
+};
+
+// Localization
+const T_AR = {
+  dashboard: "لوحة المعلومات",
+  projects: "المشاريع",
+  myTasks: "مهامي",
+  workload: "حمل العمل",
+  teams: "الفرق",
+  analytics: "التقارير",
+  inbox: "الصندوق الوارد",
+  settings: "الإعدادات",
+  search: "بحث سريع…",
+  new: "جديد",
+  newTask: "مهمة جديدة",
+  newProject: "مشروع جديد",
+  filter: "تصفية",
+  sort: "ترتيب",
+  group: "تجميع",
+  overview: "نظرة عامة",
+  activity: "النشاط",
+  files: "الملفات",
+  timeline: "الجدول الزمني",
+  board: "لوحة Kanban",
+  list: "قائمة",
+  gantt: "Gantt",
+  calendar: "التقويم",
+  status: { todo: "للإنجاز", progress: "قيد التنفيذ", review: "قيد المراجعة", blocked: "محظورة", done: "منتهية" },
+  priority: { low: "منخفضة", med: "متوسطة", high: "عالية", crit: "حرجة" },
+  today: "اليوم",
+  late: "متأخرة",
+  due: "الاستحقاق",
+  assignee: "المسند إليه",
+  progress: "الإنجاز",
+  estimate: "تقدير",
+  spent: "المنقضي",
+  client: "العميل",
+  pm: "مدير المشروع",
+  budget: "الميزانية",
+  description: "الوصف",
+  comments: "التعليقات",
+  attachments: "المرفقات",
+  dependencies: "الاعتماديات",
+  subtasks: "المهام الفرعية",
+  noResults: "لا توجد نتائج",
+  addComment: "أضف تعليقاً… (@ للإشارة)",
+  projectsCount: "مشاريع",
+  tasksOpen: "مهام مفتوحة",
+  overdue: "متأخرة",
+  velocity: "Velocity / أسبوع",
+  openTasks: "المهام المفتوحة",
+  completion: "نسبة الإنجاز",
+  topLate: "أعلى المهام تأخراً",
+  overloaded: "الأعضاء الأكثر ضغطاً",
+  velocityTrend: "Velocity الفريق — آخر 8 أسابيع",
+  recentActivity: "النشاط الأخير",
+  upcoming: "المستحقات القريبة",
+  burn: "Burn-down",
+  h: "س",
+  d: "يوم",
+  week: "أسبوع",
+  month: "شهر",
+  days: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+  months: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+};
+const T_EN = {
+  dashboard: "Dashboard",
+  projects: "Projects",
+  myTasks: "My Tasks",
+  workload: "Workload",
+  teams: "Teams",
+  analytics: "Analytics",
+  inbox: "Inbox",
+  settings: "Settings",
+  search: "Quick search…",
+  new: "New",
+  newTask: "New Task",
+  newProject: "New Project",
+  filter: "Filter",
+  sort: "Sort",
+  group: "Group",
+  overview: "Overview",
+  activity: "Activity",
+  files: "Files",
+  timeline: "Timeline",
+  board: "Board",
+  list: "List",
+  gantt: "Gantt",
+  calendar: "Calendar",
+  status: { todo: "To Do", progress: "In Progress", review: "In Review", blocked: "Blocked", done: "Done" },
+  priority: { low: "Low", med: "Medium", high: "High", crit: "Critical" },
+  today: "Today",
+  late: "Late",
+  due: "Due",
+  assignee: "Assignee",
+  progress: "Progress",
+  estimate: "Estimate",
+  spent: "Spent",
+  client: "Client",
+  pm: "PM",
+  budget: "Budget",
+  description: "Description",
+  comments: "Comments",
+  attachments: "Attachments",
+  dependencies: "Dependencies",
+  subtasks: "Subtasks",
+  noResults: "No results",
+  addComment: "Add a comment… (@ to mention)",
+  projectsCount: "Projects",
+  tasksOpen: "Open tasks",
+  overdue: "Overdue",
+  velocity: "Velocity / wk",
+  openTasks: "Open tasks",
+  completion: "Completion",
+  topLate: "Most overdue",
+  overloaded: "Overloaded members",
+  velocityTrend: "Team velocity — last 8 weeks",
+  recentActivity: "Recent activity",
+  upcoming: "Upcoming",
+  burn: "Burn-down",
+  h: "h",
+  d: "d",
+  week: "Week",
+  month: "Month",
+  days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+
+const TODAY = new Date("2026-04-16");
+
+Object.assign(window, { TEAM, PROJECTS, TASKS, ACTIVITY, COMMENTS_BY_TASK, T_AR, T_EN, TODAY });
+</script>
+<script type="text/babel">
+var useState = React.useState, useEffect = React.useEffect, useRef = React.useRef, useMemo = React.useMemo, useCallback = React.useCallback;
+/* global React */
+// Trend PM — atoms & utilities
+
+// r
+
+// ——— ICONS (stroke-based, 14px) ———
+const Icon = ({ name, size = 14, style = {} }) => {
+  const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", style };
+  const paths = {
+    dashboard: <><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></>,
+    project: <><path d="M3 7h18"/><path d="M5 7v12a2 2 0 002 2h10a2 2 0 002-2V7"/><path d="M9 3h6v4H9z"/></>,
+    tasks: <><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><circle cx="4" cy="6" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="4" cy="18" r="1.5"/></>,
+    workload: <><path d="M3 3v18h18"/><rect x="6" y="10" width="3" height="8"/><rect x="11" y="6" width="3" height="12"/><rect x="16" y="13" width="3" height="5"/></>,
+    team: <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="7" r="2.5"/><path d="M15 20c0-2 2-4 5-4"/></>,
+    analytics: <><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></>,
+    inbox: <><path d="M3 13l3-9h12l3 9"/><path d="M3 13v6a2 2 0 002 2h14a2 2 0 002-2v-6"/><path d="M3 13h5l1 2h6l1-2h5"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19 12l2-1-1-3-2 .5M5 12l-2-1 1-3 2 .5M12 5l1-2h-2l-1 2M12 19l1 2h-2l-1-2"/></>,
+    search: <><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></>,
+    plus: <><path d="M12 5v14M5 12h14"/></>,
+    filter: <><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></>,
+    sort: <><path d="M6 4v16M6 20l-3-3M6 20l3-3M18 20V4M18 4l-3 3M18 4l3 3"/></>,
+    chevron: <><path d="M9 6l6 6-6 6"/></>,
+    chevDown: <><path d="M6 9l6 6 6-6"/></>,
+    chevLeft: <><path d="M15 6l-6 6 6 6"/></>,
+    chevRight: <><path d="M9 6l6 6-6 6"/></>,
+    close: <><path d="M6 6l12 12M18 6L6 18"/></>,
+    more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
+    moreV: <><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
+    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    comment: <><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></>,
+    paperclip: <><path d="M21 12l-8.5 8.5a5 5 0 01-7-7L14 5a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 8"/></>,
+    link: <><path d="M10 14a5 5 0 017 0l3-3a5 5 0 00-7-7l-2 2"/><path d="M14 10a5 5 0 00-7 0l-3 3a5 5 0 007 7l2-2"/></>,
+    user: <><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></>,
+    flag: <><path d="M5 21V4h14l-3 5 3 5H5"/></>,
+    check: <><path d="M5 12l5 5L20 7"/></>,
+    dots: <><circle cx="12" cy="12" r="9"/></>,
+    moon: <><path d="M20 15a8 8 0 01-11-11 8 8 0 1011 11z"/></>,
+    sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></>,
+    bell: <><path d="M18 16v-5a6 6 0 10-12 0v5l-2 2h16z"/><path d="M10 21a2 2 0 004 0"/></>,
+    kanban: <><rect x="3" y="4" width="6" height="16"/><rect x="11" y="4" width="6" height="10"/><rect x="19" y="4" width="2" height="12"/></>,
+    list: <><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></>,
+    gantt: <><path d="M3 6h7M3 12h12M3 18h9"/><circle cx="4" cy="6" r="0.5"/></>,
+    arrowRight: <><path d="M5 12h14M13 6l6 6-6 6"/></>,
+    alert: <><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v5M12 17v.5"/></>,
+    archive: <><rect x="3" y="4" width="18" height="4"/><path d="M5 8v11a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></>,
+    globe: <><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></>,
+    lang: <><path d="M3 5h10M7 3v2M5 5c0 4 3 8 8 10M13 5c0 4-3 8-8 10"/><path d="M13 19l4-8 4 8M14.5 16h5"/></>,
+    zap: <><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></>,
+    tag: <><path d="M20 12l-8 8-8-8V4h8z"/><circle cx="8" cy="8" r="1"/></>,
+    trend: <><path d="M3 17l6-6 4 4 7-8"/><path d="M14 7h6v6"/></>,
+    command: <><path d="M9 3a3 3 0 100 6h6a3 3 0 100-6v12a3 3 0 11-6 0V9a3 3 0 11-6 0 3 3 0 106 0"/></>,
+  };
+  return <svg {...common}>{paths[name] || paths.dots}</svg>;
+};
+
+// ——— Avatar ———
+const Avatar = ({ user, size = "sm" }) => {
+  if (!user) return null;
+  const cls = size === "lg" ? "avatar lg" : size === "md" ? "avatar md" : "avatar";
+  const bg = `oklch(0.28 0.06 ${user.hue})`;
+  const fg = `oklch(0.85 0.08 ${user.hue})`;
+  return (
+    <span className={cls} style={{ background: bg, color: fg, borderColor: `oklch(0.35 0.06 ${user.hue})` }} title={user.name}>
+      {user.initials}
+    </span>
+  );
+};
+
+const AvatarStack = ({ users, max = 3, size = "sm" }) => {
+  const shown = users.slice(0, max);
+  const more = users.length - shown.length;
+  return (
+    <span className="avatar-stack">
+      {shown.map(u => <Avatar key={u.id} user={u} size={size} />)}
+      {more > 0 && <span className={size === "lg" ? "avatar lg" : size === "md" ? "avatar md" : "avatar"}>+{more}</span>}
+    </span>
+  );
+};
+
+// ——— Status dot ———
+const StatusDot = ({ s }) => <span className={"sdot " + s} />;
+const PriorityDot = ({ p }) => <span className={"pdot " + p} />;
+
+const PriorityFlag = ({ p }) => {
+  const color = p === "crit" ? "var(--p-crit)" : p === "high" ? "var(--p-high)" : p === "med" ? "var(--p-med)" : "var(--p-low)";
+  return <Icon name="flag" size={12} style={{ color }} />;
+};
+
+// ——— Progress bar ———
+const Progress = ({ value, thin }) => (
+  <span className={"progress" + (thin ? " thin" : "")} title={value + "%"}>
+    <i style={{ width: value + "%" }} />
+  </span>
+);
+
+// ——— Date helpers ———
+const D = (s) => new Date(s);
+const daysBetween = (a, b) => Math.round((D(b) - D(a)) / 86400000);
+const isLate = (task) => task.status !== "done" && task.due && daysBetween(TODAY.toISOString().slice(0,10), task.due) < 0;
+const lateDays = (task) => -daysBetween(TODAY.toISOString().slice(0,10), task.due);
+const formatDate = (s, lang = "ar") => {
+  if (!s) return "—";
+  const d = D(s);
+  const T = lang === "ar" ? T_AR : T_EN;
+  return `${d.getDate()} ${T.months[d.getMonth()]}`;
+};
+const formatShort = (s) => {
+  if (!s) return "—";
+  const d = D(s);
+  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}`;
+};
+
+// ——— Lookups ———
+const userById = (id) => TEAM.find(u => u.id === id);
+const projectById = (id) => PROJECTS.find(p => p.id === id);
+const tasksOf = (pid) => TASKS.filter(t => t.projectId === pid);
+
+// ——— Click-outside hook ———
+function useClickOutside(ref, onOut) {
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onOut(); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+}
+
+Object.assign(window, { Icon, Avatar, AvatarStack, StatusDot, PriorityDot, PriorityFlag, Progress, D, daysBetween, isLate, lateDays, formatDate, formatShort, userById, projectById, tasksOf, useClickOutside });
+
+/* global React, Icon, Avatar, AvatarStack, StatusDot, PriorityDot, PriorityFlag, Progress, userById, projectById, tasksOf, isLate, lateDays, formatDate, formatShort, D, daysBetween, TEAM, PROJECTS, TASKS, ACTIVITY, T_AR, T_EN, TODAY, useClickOutside */
+
+// r
+
+// ——— Sidebar ———
+const Sidebar = ({ view, setView, lang, t }) => {
+  const Item = ({ id, icon, label, tail, active, onClick }) => (
+    <div className={"sb-item" + (active ? " active" : "")} onClick={onClick}>
+      <Icon name={icon} /><span className="truncate">{label}</span>
+      {tail != null && <span className="tail">{tail}</span>}
+    </div>
+  );
+  const openTasks = TASKS.filter(x => x.status !== "done").length;
+  const myTasksCount = TASKS.filter(x => x.assignees.includes("u2") && x.status !== "done").length;
+  return (
+    <aside className="sidebar">
+      <div className="sb-section">
+        <Item icon="dashboard" label={t.dashboard} active={view.type === "dash"} onClick={() => setView({ type: "dash" })} />
+        <Item icon="inbox" label={t.inbox} tail="12" onClick={() => setView({ type: "dash" })} />
+        <Item icon="tasks" label={t.myTasks} tail={myTasksCount} active={view.type === "mytasks"} onClick={() => setView({ type: "mytasks" })} />
+        <Item icon="workload" label={t.workload} active={view.type === "workload"} onClick={() => setView({ type: "workload" })} />
+        <Item icon="analytics" label={t.analytics} active={view.type === "analytics"} onClick={() => setView({ type: "analytics" })} />
+      </div>
+
+      <div className="sb-section">
+        <div className="sb-head">
+          <span>{t.projects}</span>
+          <Icon name="plus" size={12} style={{ cursor: "pointer" }} />
+        </div>
+        {PROJECTS.map(p => {
+          const t_open = tasksOf(p.id).filter(x => x.status !== "done").length;
+          return (
+            <div key={p.id} className={"sb-item" + (view.type === "project" && view.id === p.id ? " active" : "")}
+                 onClick={() => setView({ type: "project", id: p.id, sub: "board" })}>
+              <span className="sb-proj-dot" style={{ background: p.color }} />
+              <span className="truncate">{lang === "ar" ? p.name : p.en}</span>
+              <span className="tail">{t_open}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="sb-section">
+        <div className="sb-head"><span>{t.teams}</span></div>
+        <Item icon="team" label={lang === "ar" ? "فريق Backend" : "Backend"} tail="4" />
+        <Item icon="team" label={lang === "ar" ? "فريق Frontend" : "Frontend"} tail="3" />
+        <Item icon="team" label={lang === "ar" ? "فريق التصميم" : "Design"} tail="2" />
+        <Item icon="team" label={lang === "ar" ? "فريق DevOps" : "DevOps"} tail="2" />
+      </div>
+
+      <div className="sb-section">
+        <Item icon="settings" label={t.settings} />
+      </div>
+    </aside>
+  );
+};
+
+// ——— Topbar ———
+const Topbar = ({ view, lang, setLang, theme, setTheme, openCmdk, t }) => {
+  const crumbs = useMemo(() => {
+    const out = [{ label: "Trend" }];
+    if (view.type === "dash") out.push({ label: t.dashboard, cur: true });
+    else if (view.type === "mytasks") out.push({ label: t.myTasks, cur: true });
+    else if (view.type === "workload") out.push({ label: t.workload, cur: true });
+    else if (view.type === "analytics") out.push({ label: t.analytics, cur: true });
+    else if (view.type === "project") {
+      const p = projectById(view.id);
+      out.push({ label: t.projects });
+      out.push({ label: lang === "ar" ? p.name : p.en, cur: true });
+    }
+    return out;
+  }, [view, lang]);
+
+  return (
+    <div className="topbar">
+      <div className="brand">
+        <div className="logo">t</div>
+        <span>Trend<span style={{ color: "var(--text-3)", fontWeight: 400 }}>/PM</span></span>
+      </div>
+      <div className="crumb">
+        {crumbs.map((c, i) => (
+          <window.React.Fragment key={i}>
+            {i > 0 && <span className="sep">/</span>}
+            <span className={c.cur ? "cur" : ""}>{c.label}</span>
+          </window.React.Fragment>
+        ))}
+      </div>
+      <div className="spacer" />
+      <button className="search-pill" onClick={openCmdk}>
+        <Icon name="search" size={12} />
+        <span>{t.search}</span>
+        <span className="spacer" />
+        <span className="kbd">⌘</span><span className="kbd">K</span>
+      </button>
+      <button className="btn ghost icon" title={theme === "dark" ? "Light" : "Dark"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+        <Icon name={theme === "dark" ? "sun" : "moon"} size={14} />
+      </button>
+      <button className="btn ghost" onClick={() => setLang(lang === "ar" ? "en" : "ar")}>
+        <Icon name="lang" size={12} /> <span className="en">{lang === "ar" ? "EN" : "AR"}</span>
+      </button>
+      <button className="btn ghost icon"><Icon name="bell" size={14} /></button>
+      <Avatar user={userById("u2")} size="md" />
+    </div>
+  );
+};
+
+// ——— Command Palette ———
+const CommandPalette = ({ open, onClose, onGo, lang, t }) => {
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const inputRef = useRef();
+
+  useEffect(() => {
+    if (open) { setTimeout(() => inputRef.current?.focus(), 10); setQ(""); setSel(0); }
+  }, [open]);
+
+  const items = useMemo(() => {
+    const nav = [
+      { g: lang === "ar" ? "الانتقال" : "Go to", label: t.dashboard, action: () => onGo({ type: "dash" }), kbd: "G D" },
+      { g: lang === "ar" ? "الانتقال" : "Go to", label: t.myTasks, action: () => onGo({ type: "mytasks" }), kbd: "G M" },
+      { g: lang === "ar" ? "الانتقال" : "Go to", label: t.workload, action: () => onGo({ type: "workload" }), kbd: "G W" },
+      { g: lang === "ar" ? "الانتقال" : "Go to", label: t.analytics, action: () => onGo({ type: "analytics" }), kbd: "G A" },
+    ];
+    const projs = PROJECTS.map(p => ({
+      g: lang === "ar" ? "المشاريع" : "Projects",
+      label: (lang === "ar" ? p.name : p.en),
+      color: p.color,
+      action: () => onGo({ type: "project", id: p.id, sub: "board" }),
+      kbd: p.key,
+    }));
+    const tasks = TASKS.slice(0, 20).map(tk => ({
+      g: lang === "ar" ? "المهام" : "Tasks",
+      label: tk.title,
+      kbd: tk.id,
+      action: () => onGo({ type: "project", id: tk.projectId, sub: "board", taskId: tk.id }),
+    }));
+    const actions = [
+      { g: lang === "ar" ? "إجراءات" : "Actions", label: t.newTask, kbd: "C T", action: () => {} },
+      { g: lang === "ar" ? "إجراءات" : "Actions", label: t.newProject, kbd: "C P", action: () => {} },
+      { g: lang === "ar" ? "إجراءات" : "Actions", label: lang === "ar" ? "تبديل الوضع الداكن" : "Toggle dark mode", kbd: "⌘ \\", action: () => {} },
+    ];
+    const all = [...nav, ...projs, ...tasks, ...actions];
+    if (!q.trim()) return all;
+    const Q = q.toLowerCase();
+    return all.filter(x => x.label.toLowerCase().includes(Q) || (x.kbd || "").toLowerCase().includes(Q));
+  }, [q, lang]);
+
+  const grouped = useMemo(() => {
+    const g = {};
+    items.forEach((it, i) => { (g[it.g] ||= []).push({ ...it, _i: i }); });
+    return g;
+  }, [items]);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowDown") { e.preventDefault(); setSel(s => Math.min(items.length - 1, s + 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setSel(s => Math.max(0, s - 1)); }
+      else if (e.key === "Enter") { e.preventDefault(); const it = items[sel]; if (it) { it.action(); onClose(); } }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, items, sel]);
+
+  if (!open) return null;
+  return (
+    <div className="cmdk-backdrop" onClick={onClose}>
+      <div className="cmdk" onClick={e => e.stopPropagation()}>
+        <input ref={inputRef} className="cmdk-input" placeholder={lang === "ar" ? "اكتب أمراً أو ابحث…" : "Type a command or search…"} value={q} onChange={e => { setQ(e.target.value); setSel(0); }} />
+        <div className="cmdk-list">
+          {items.length === 0 && <div style={{ padding: 20, textAlign: "center", color: "var(--text-3)" }}>{t.noResults}</div>}
+          {Object.entries(grouped).map(([g, arr]) => (
+            <div key={g}>
+              <div className="cmdk-group-label">{g}</div>
+              {arr.map(it => (
+                <div key={it._i} className={"cmdk-item" + (it._i === sel ? " active" : "")}
+                     onMouseEnter={() => setSel(it._i)}
+                     onClick={() => { it.action(); onClose(); }}>
+                  {it.color && <span style={{ width: 8, height: 8, borderRadius: 2, background: it.color, flexShrink: 0 }} />}
+                  <span className="truncate">{it.label}</span>
+                  {it.kbd && <span className="tail">{it.kbd}</span>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ——— Tweaks Panel ———
+const Tweaks = ({ open, lang, setLang, theme, setTheme, accent, setAccent, font, setFont }) => {
+  if (!open) return null;
+  const accents = [
+    { h: 162, name: "Emerald" },
+    { h: 250, name: "Indigo" },
+    { h: 30, name: "Amber" },
+    { h: 350, name: "Rose" },
+    { h: 210, name: "Sky" },
+  ];
+  return (
+    <div className="tweaks">
+      <div className="tweaks-head">Tweaks</div>
+      <div className="tweaks-body">
+        <div className="tw-row">
+          <span className="k">Accent</span>
+          <div className="tw-swatches">
+            {accents.map(a => (
+              <button key={a.h} className={"tw-sw" + (a.h === accent ? " active" : "")}
+                      style={{ background: `oklch(0.72 0.14 ${a.h})` }}
+                      onClick={() => setAccent(a.h)} title={a.name} />
+            ))}
+          </div>
+        </div>
+        <div className="tw-row">
+          <span className="k">Theme</span>
+          <div className="tw-seg">
+            <button className={theme === "dark" ? "active" : ""} onClick={() => setTheme("dark")}>Dark</button>
+            <button className={theme === "light" ? "active" : ""} onClick={() => setTheme("light")}>Light</button>
+          </div>
+        </div>
+        <div className="tw-row">
+          <span className="k">Direction</span>
+          <div className="tw-seg">
+            <button className={lang === "ar" ? "active" : ""} onClick={() => setLang("ar")}>RTL · AR</button>
+            <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>LTR · EN</button>
+          </div>
+        </div>
+        <div className="tw-row">
+          <span className="k">Font</span>
+          <div className="tw-seg">
+            <button className={font === "plex" ? "active" : ""} onClick={() => setFont("plex")}>Plex</button>
+            <button className={font === "readex" ? "active" : ""} onClick={() => setFont("readex")}>Readex</button>
+            <button className={font === "cairo" ? "active" : ""} onClick={() => setFont("cairo")}>Cairo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { Sidebar, Topbar, CommandPalette, Tweaks });
+
+/* global React, Icon, Avatar, AvatarStack, StatusDot, PriorityDot, PriorityFlag, Progress, userById, projectById, tasksOf, isLate, lateDays, formatDate, formatShort, D, daysBetween, TEAM, PROJECTS, TASKS, ACTIVITY, T_AR, T_EN, TODAY */
+
+// r
+
+// ——— Sparkline / small charts ———
+const Sparkline = ({ data, w = 120, h = 28, color = "var(--accent)" }) => {
+  const max = Math.max(...data), min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return [x, y];
+  });
+  const path = "M " + pts.map(p => p.join(" ")).join(" L ");
+  const area = path + ` L ${w} ${h} L 0 ${h} Z`;
+  return (
+    <svg className="chart" width={w} height={h} style={{ display: "block" }}>
+      <path d={area} fill={color} className="chart-area" />
+      <path d={path} stroke={color} className="chart-line" />
+    </svg>
+  );
+};
+
+// ——— Velocity chart ———
+const VelocityChart = ({ lang, t }) => {
+  const data = [18, 22, 19, 24, 27, 23, 29, 31];
+  const w = 540, h = 160, p = 28;
+  const max = Math.max(...data) * 1.2;
+  const bw = (w - p * 2) / data.length;
+  return (
+    <svg className="chart" viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: h }}>
+      {[0, 0.25, 0.5, 0.75, 1].map(r => {
+        const y = p + (h - p * 2) * (1 - r);
+        return <g key={r}><line x1={p} x2={w - p} y1={y} y2={y} className="chart-grid" /><text x={p - 6} y={y + 3} textAnchor="end" className="chart-axis">{Math.round(max * r)}</text></g>;
+      })}
+      {data.map((v, i) => {
+        const bh = (v / max) * (h - p * 2);
+        const x = p + i * bw + 4;
+        const y = h - p - bh;
+        return <g key={i}>
+          <rect x={x} y={y} width={bw - 8} height={bh} fill="var(--accent)" opacity={i === data.length - 1 ? 1 : 0.5} rx="2" />
+          <text x={x + (bw - 8) / 2} y={h - p + 12} textAnchor="middle" className="chart-axis">W{i + 1}</text>
+        </g>;
+      })}
+    </svg>
+  );
+};
+
+// ——— Burn-down — dual line ———
+const BurnDown = ({ lang }) => {
+  const ideal = [100, 88, 75, 63, 50, 38, 25, 13, 0];
+  const actual = [100, 92, 84, 78, 68, 58, 52, 44];
+  const w = 540, h = 140, p = 24;
+  const max = 100;
+  const xStep = (w - p * 2) / (ideal.length - 1);
+  const toPath = (arr) => "M " + arr.map((v, i) => `${p + i * xStep} ${p + (1 - v / max) * (h - p * 2)}`).join(" L ");
+  return (
+    <svg className="chart" viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: h }}>
+      {[0, 0.5, 1].map(r => {
+        const y = p + (h - p * 2) * (1 - r);
+        return <line key={r} x1={p} x2={w - p} y1={y} y2={y} className="chart-grid" />;
+      })}
+      <path d={toPath(ideal)} stroke="var(--text-4)" strokeDasharray="3 3" fill="none" strokeWidth="1" />
+      <path d={toPath(actual)} stroke="var(--accent)" fill="none" strokeWidth="1.5" />
+      {actual.map((v, i) => <circle key={i} cx={p + i * xStep} cy={p + (1 - v / max) * (h - p * 2)} r="2" fill="var(--accent)" />)}
+    </svg>
+  );
+};
+
+// ——— Dashboard ———
+const Dashboard = ({ lang, t, setView, openTask }) => {
+  const totalTasks = TASKS.length;
+  const openTasks = TASKS.filter(x => x.status !== "done").length;
+  const lateTasks = TASKS.filter(isLate);
+  const activeProjects = PROJECTS.filter(p => p.status === "Active").length;
+
+  // Overloaded members: count open tasks per assignee, top ones
+  const loadMap = {};
+  TASKS.filter(x => x.status !== "done").forEach(tk => tk.assignees.forEach(a => { loadMap[a] = (loadMap[a] || 0) + 1; }));
+  const overloaded = Object.entries(loadMap).map(([uid, n]) => ({ u: userById(uid), n, hrs: n * 6 + (uid.charCodeAt(1) % 7) })).sort((a, b) => b.n - a.n).slice(0, 5);
+  const maxLoad = Math.max(...overloaded.map(x => x.n));
+
+  return (
+    <div className="scroll">
+      <div className="subhead">
+        <h1>{t.dashboard}</h1>
+        <span className="sub mono">· {TODAY.toISOString().slice(0,10)} · {lang === "ar" ? "الخميس" : "Thu"}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 6 }}>
+          <button className="btn sm"><Icon name="calendar" size={12} /> {lang === "ar" ? "آخر 30 يوم" : "Last 30 days"}</button>
+          <button className="btn sm"><Icon name="filter" size={12} /> {t.filter}</button>
+          <button className="btn primary sm"><Icon name="plus" size={12} /> {t.newTask}</button>
+        </div>
+      </div>
+
+      <div className="dash">
+        {/* KPIs */}
+        <div className="col-3 kpi">
+          <span className="kpi-label">{t.projectsCount}</span>
+          <span className="kpi-value num">{activeProjects}<span style={{ color: "var(--text-4)", fontSize: 14 }}>/{PROJECTS.length}</span></span>
+          <span className="kpi-sub"><span className="trend-up">▲ 2</span><span>{lang === "ar" ? "نشطة هذا الشهر" : "active this month"}</span><span style={{ marginInlineStart: "auto" }}><Sparkline data={[4, 4, 5, 5, 4, 5, 6, 6]} w={60} h={20} /></span></span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{t.openTasks}</span>
+          <span className="kpi-value num">{openTasks}</span>
+          <span className="kpi-sub"><span className="trend-down">▲ 8</span><span>{lang === "ar" ? "منذ الأسبوع الماضي" : "since last week"}</span><span style={{ marginInlineStart: "auto" }}><Sparkline data={[30, 32, 28, 34, 36, 33, 35, 37]} w={60} h={20} color="var(--s-review)" /></span></span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{t.overdue}</span>
+          <span className="kpi-value num" style={{ color: "var(--s-late)" }}>{lateTasks.length}</span>
+          <span className="kpi-sub"><span style={{ color: "var(--s-late)" }}>▲ 3</span><span>{lang === "ar" ? "تحتاج تدخّلاً" : "need attention"}</span><span style={{ marginInlineStart: "auto" }}><Sparkline data={[2, 2, 3, 4, 3, 4, 5, 6]} w={60} h={20} color="var(--s-late)" /></span></span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{t.velocity}</span>
+          <span className="kpi-value num">31</span>
+          <span className="kpi-sub"><span className="trend-up">▲ 6.9%</span><span>{lang === "ar" ? "مقارنةً بالسابق" : "vs prior"}</span><span style={{ marginInlineStart: "auto" }}><Sparkline data={[18, 22, 19, 24, 27, 23, 29, 31]} w={60} h={20} /></span></span>
+        </div>
+
+        {/* Projects progress table */}
+        <div className="col-8 panel">
+          <div className="panel-head">
+            <h3>{t.projects}</h3>
+            <span className="chip mono">{PROJECTS.length}</span>
+            <span className="tail">{lang === "ar" ? "مُرتّب حسب الأولوية" : "sorted by priority"}</span>
+          </div>
+          <table className="tbl">
+            <thead><tr>
+              <th style={{ width: 28 }}></th>
+              <th>{lang === "ar" ? "المشروع" : "Project"}</th>
+              <th>{t.pm}</th>
+              <th>{lang === "ar" ? "الفريق" : "Team"}</th>
+              <th className="num">{t.completion}</th>
+              <th className="num">{lang === "ar" ? "مفتوحة" : "Open"}</th>
+              <th className="num">{t.late}</th>
+              <th>{t.due}</th>
+              <th style={{ width: 28 }}></th>
+            </tr></thead>
+            <tbody>
+              {PROJECTS.map(p => {
+                const ts = tasksOf(p.id);
+                const open = ts.filter(x => x.status !== "done").length;
+                const late = ts.filter(isLate).length;
+                const assignees = [...new Set(ts.flatMap(x => x.assignees))].map(userById).filter(Boolean);
+                return (
+                  <tr key={p.id} style={{ cursor: "pointer" }} onClick={() => setView({ type: "project", id: p.id, sub: "board" })}>
+                    <td><span style={{ width: 8, height: 8, display: "inline-block", background: p.color, borderRadius: 2 }} /></td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className="mono" style={{ color: "var(--text-4)", fontSize: 10 }}>{p.key}</span>
+                        <span className="truncate">{lang === "ar" ? p.name : p.en}</span>
+                        <PriorityDot p={p.priority === "Critical" ? "crit" : p.priority === "High" ? "high" : p.priority === "Medium" ? "med" : "low"} />
+                      </div>
+                    </td>
+                    <td><Avatar user={userById(p.pm)} /></td>
+                    <td><AvatarStack users={assignees} max={4} /></td>
+                    <td className="num" style={{ width: 160 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Progress value={p.progress} /><span style={{ minWidth: 32, textAlign: "end" }}>{p.progress}%</span>
+                      </div>
+                    </td>
+                    <td className="num">{open}</td>
+                    <td className="num" style={{ color: late > 0 ? "var(--s-late)" : "var(--text-3)" }}>{late || "—"}</td>
+                    <td className="mono" style={{ color: "var(--text-3)" }}>{formatShort(p.due)}</td>
+                    <td><Icon name="chevron" size={12} style={{ color: "var(--text-4)", transform: lang === "ar" ? "rotate(180deg)" : "none" }} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Right column: Top late + Overloaded */}
+        <div className="col-4" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="panel">
+            <div className="panel-head">
+              <h3>{t.topLate}</h3>
+              <span className="chip" style={{ color: "var(--s-late)", background: "color-mix(in oklch, var(--s-late) 15%, transparent)", borderColor: "transparent" }}>{lateTasks.length}</span>
+            </div>
+            <div>
+              {lateTasks.slice(0, 5).sort((a, b) => lateDays(b) - lateDays(a)).map(tk => {
+                const p = projectById(tk.projectId);
+                return (
+                  <div key={tk.id} onClick={() => openTask(tk.id)} style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                    <StatusDot s={tk.status} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="truncate" style={{ fontSize: "var(--fs-sm)" }}>{tk.title}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        <span className="mono" style={{ fontSize: 10, color: "var(--text-4)" }}>{tk.id}</span>
+                        <span style={{ width: 4, height: 4, borderRadius: 2, background: p.color, display: "inline-block" }} />
+                        <span style={{ fontSize: "var(--fs-xxs)", color: "var(--text-3)" }} className="truncate">{lang === "ar" ? p.name : p.en}</span>
+                      </div>
+                    </div>
+                    <div className="mono" style={{ fontSize: "var(--fs-xs)", color: "var(--s-late)", whiteSpace: "nowrap" }}>-{lateDays(tk)}{t.d}</div>
+                    {tk.assignees[0] && <Avatar user={userById(tk.assignees[0])} />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-head">
+              <h3>{t.overloaded}</h3>
+              <span className="tail">{lang === "ar" ? "هذا الأسبوع" : "this week"}</span>
+            </div>
+            <div style={{ padding: "4px 12px 10px" }}>
+              {overloaded.map(({ u, n, hrs }) => {
+                const pct = (n / maxLoad) * 100;
+                const over = hrs > 40;
+                return (
+                  <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                    <Avatar user={u} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span className="truncate" style={{ fontSize: "var(--fs-sm)" }}>{lang === "ar" ? u.name : u.en}</span>
+                        <span className="mono" style={{ marginInlineStart: "auto", fontSize: "var(--fs-xs)", color: over ? "var(--s-blocked)" : "var(--text-3)" }}>{hrs}{t.h}/40{t.h}</span>
+                      </div>
+                      <div style={{ marginTop: 4, height: 4, background: "var(--hover)", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ width: pct + "%", height: "100%", background: over ? "var(--s-blocked)" : "var(--accent)" }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Velocity chart */}
+        <div className="col-8 panel">
+          <div className="panel-head">
+            <h3>{t.velocityTrend}</h3>
+            <span className="tail mono">31 tasks · 5.8% ▲</span>
+          </div>
+          <div style={{ padding: "12px 16px" }}>
+            <VelocityChart lang={lang} t={t} />
+          </div>
+        </div>
+
+        {/* Activity */}
+        <div className="col-4 panel">
+          <div className="panel-head">
+            <h3>{t.recentActivity}</h3>
+          </div>
+          <div style={{ padding: "6px 12px 10px" }}>
+            {ACTIVITY.map((a, i) => {
+              const u = userById(a.who);
+              return (
+                <div key={i} className="act">
+                  <Avatar user={u} />
+                  <div className="act-body">
+                    <span className="who">{lang === "ar" ? u.name.split(" ")[0] : u.en.split(" ")[0]}</span> {a.action}{" "}
+                    <span style={{ color: "var(--text)" }}>{a.target}</span>
+                    <span className="when">{a.when}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Burn-down for key project */}
+        <div className="col-6 panel">
+          <div className="panel-head">
+            <h3>{t.burn} — {lang === "ar" ? "بوابة الدفع" : "Payment Gateway"}</h3>
+            <span className="tail mono">PAY · 62%</span>
+          </div>
+          <div style={{ padding: "12px 16px" }}>
+            <BurnDown lang={lang} />
+            <div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: "var(--fs-xs)", color: "var(--text-3)" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 12, height: 1, borderTop: "1px dashed var(--text-4)" }} />{lang === "ar" ? "المثالي" : "Ideal"}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 12, height: 2, background: "var(--accent)" }} />{lang === "ar" ? "الفعلي" : "Actual"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming deadlines */}
+        <div className="col-6 panel">
+          <div className="panel-head">
+            <h3>{t.upcoming}</h3>
+            <span className="tail">{lang === "ar" ? "الأيام السبعة القادمة" : "next 7 days"}</span>
+          </div>
+          <div>
+            {TASKS.filter(x => x.status !== "done" && x.due && daysBetween(TODAY.toISOString().slice(0,10), x.due) >= 0 && daysBetween(TODAY.toISOString().slice(0,10), x.due) <= 10)
+              .sort((a, b) => D(a.due) - D(b.due))
+              .slice(0, 6).map(tk => {
+                const p = projectById(tk.projectId);
+                const days = daysBetween(TODAY.toISOString().slice(0,10), tk.due);
+                return (
+                  <div key={tk.id} onClick={() => openTask(tk.id)} style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="mono" style={{ fontSize: 10, color: "var(--text-4)", width: 56 }}>{tk.id}</span>
+                    <StatusDot s={tk.status} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="truncate" style={{ fontSize: "var(--fs-sm)" }}>{tk.title}</div>
+                    </div>
+                    <span style={{ width: 6, height: 6, borderRadius: 2, background: p.color }} />
+                    <AvatarStack users={tk.assignees.map(userById).filter(Boolean)} max={2} />
+                    <span className="mono" style={{ fontSize: "var(--fs-xs)", color: days <= 2 ? "var(--s-late)" : "var(--text-3)", width: 60, textAlign: "end" }}>
+                      {days === 0 ? t.today : days === 1 ? (lang === "ar" ? "غداً" : "tomorrow") : `+${days}${t.d}`}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { Dashboard });
+
+/* global React, Icon, Avatar, AvatarStack, StatusDot, PriorityDot, PriorityFlag, Progress, userById, projectById, tasksOf, isLate, lateDays, formatDate, formatShort, D, daysBetween, TEAM, PROJECTS, TASKS, ACTIVITY, T_AR, T_EN, TODAY, useClickOutside */
+
+// r
+
+const STATUS_ORDER = ["todo", "progress", "review", "blocked", "done"];
+
+// Shared: row-level status dropdown
+const StatusMenu = ({ value, onChange, onClose, lang, t }) => {
+  const ref = useRef();
+  useClickOutside(ref, onClose);
+  return (
+    <div ref={ref} className="menu" style={{ top: "100%", insetInlineStart: 0, marginTop: 2 }}>
+      {STATUS_ORDER.map(s => (
+        <div key={s} className={"menu-item" + (s === value ? " active" : "")}
+             onClick={() => { onChange(s); onClose(); }}>
+          <StatusDot s={s} />
+          <span>{t.status[s]}</span>
+          {s === value && <Icon name="check" size={12} style={{ marginInlineStart: "auto", color: "var(--accent)" }} />}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ——— Project Header (sub + toolbar) ———
+const ProjectHeader = ({ p, sub, setSub, lang, t, filter, setFilter }) => {
+  const openCount = tasksOf(p.id).filter(x => x.status !== "done").length;
+  const lateCount = tasksOf(p.id).filter(isLate).length;
+  const TAB = (id, icon, label) => (
+    <button className={"tab" + (sub === id ? " active" : "")} onClick={() => setSub(id)}>
+      <Icon name={icon} size={12} /><span>{label}</span>
+    </button>
+  );
+  return (
+    <>
+      <div className="subhead">
+        <span style={{ width: 10, height: 10, background: p.color, borderRadius: 2 }} />
+        <h1>{lang === "ar" ? p.name : p.en}</h1>
+        <span className="chip mono">{p.key}</span>
+        <span className="chip">{p.status}</span>
+        <span className="chip"><PriorityDot p={p.priority === "Critical" ? "crit" : p.priority === "High" ? "high" : p.priority === "Medium" ? "med" : "low"} />{t.priority[p.priority === "Critical" ? "crit" : p.priority === "High" ? "high" : p.priority === "Medium" ? "med" : "low"]}</span>
+        <span className="sub">· {p.client}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Progress value={p.progress} /><span className="mono" style={{ fontSize: "var(--fs-xs)", color: "var(--text-2)" }}>{p.progress}%</span>
+          </div>
+          <span className="sub mono">· {formatShort(p.start)} → {formatShort(p.due)}</span>
+        </div>
+      </div>
+      <div className="toolbar">
+        <div className="tabs">
+          {TAB("board", "kanban", t.board)}
+          {TAB("list", "list", t.list)}
+          {TAB("gantt", "gantt", t.gantt)}
+          {TAB("calendar", "calendar", t.calendar)}
+        </div>
+        <span style={{ color: "var(--text-4)", fontSize: "var(--fs-xs)" }}>·</span>
+        <span className="chip mono">{openCount} {t.openTasks}</span>
+        {lateCount > 0 && <span className="chip" style={{ color: "var(--s-late)", borderColor: "color-mix(in oklch, var(--s-late) 30%, transparent)" }}>{lateCount} {t.late}</span>}
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 4, padding: "0 8px", height: 26 }}>
+            <Icon name="search" size={12} style={{ color: "var(--text-4)" }} />
+            <input placeholder={lang === "ar" ? "ابحث…" : "Search…"} value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 140, height: 26, fontSize: "var(--fs-sm)" }} />
+          </div>
+          <button className="btn sm"><Icon name="filter" size={12} /> {t.filter}</button>
+          <button className="btn sm"><Icon name="sort" size={12} /> {t.group}</button>
+          <button className="btn primary sm"><Icon name="plus" size={12} /> {t.newTask}</button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ——— Kanban ———
+const KanbanView = ({ p, lang, t, filter, openTask, onMove }) => {
+  const [dragId, setDragId] = useState(null);
+  const [overCol, setOverCol] = useState(null);
+
+  const cols = STATUS_ORDER.map(s => ({
+    id: s, title: t.status[s],
+    tasks: tasksOf(p.id).filter(x => x.status === s && (!filter || x.title.includes(filter) || x.id.includes(filter)))
+  }));
+
+  return (
+    <div className="kanban">
+      {cols.map(c => (
+        <div key={c.id} className="col">
+          <div className="col-head">
+            <StatusDot s={c.id} />
+            <span style={{ fontSize: "var(--fs-sm)", fontWeight: 500 }}>{c.title}</span>
+            <span className="count">{c.tasks.length}</span>
+            <Icon name="plus" size={12} style={{ color: "var(--text-3)", cursor: "pointer" }} />
+          </div>
+          <div className={"col-body" + (overCol === c.id ? " drop-over" : "")}
+               onDragOver={e => { e.preventDefault(); setOverCol(c.id); }}
+               onDragLeave={() => setOverCol(null)}
+               onDrop={e => { e.preventDefault(); if (dragId) onMove(dragId, c.id); setDragId(null); setOverCol(null); }}>
+            {c.tasks.map(tk => {
+              const late = isLate(tk);
+              return (
+                <div key={tk.id} className={"tcard" + (dragId === tk.id ? " dragging" : "")}
+                     draggable
+                     onDragStart={() => setDragId(tk.id)}
+                     onDragEnd={() => { setDragId(null); setOverCol(null); }}
+                     onClick={() => openTask(tk.id)}>
+                  <div className="tcard-head">
+                    <span>{tk.id}</span>
+                    {tk.tags.length > 0 && <span style={{ color: "var(--text-4)" }}>· {tk.tags[0]}</span>}
+                    <span className="tail">
+                      <PriorityFlag p={tk.priority} />
+                    </span>
+                  </div>
+                  <div className="tcard-title">{tk.title}</div>
+                  {tk.progress > 0 && tk.progress < 100 && <Progress value={tk.progress} thin />}
+                  <div className="tcard-meta">
+                    {tk.due && <span className="mono" style={{ color: late ? "var(--s-late)" : "var(--text-3)" }}>
+                      {late && "⚠ "}{formatShort(tk.due)}
+                    </span>}
+                    {tk.comments > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Icon name="comment" size={11} />{tk.comments}</span>}
+                    {tk.att > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Icon name="paperclip" size={11} />{tk.att}</span>}
+                    {tk.deps.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Icon name="link" size={11} />{tk.deps.length}</span>}
+                    <span className="tail"><AvatarStack users={tk.assignees.map(userById).filter(Boolean)} max={2} /></span>
+                  </div>
+                </div>
+              );
+            })}
+            {c.tasks.length === 0 && <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--text-4)" }}>—</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ——— List view with status dropdown ———
+const ListView = ({ p, lang, t, filter, openTask, onChangeStatus, allProjects }) => {
+  const [menuId, setMenuId] = useState(null);
+  const tasks = (allProjects ? TASKS : tasksOf(p.id))
+    .filter(x => !filter || x.title.includes(filter) || x.id.includes(filter));
+
+  const grouped = STATUS_ORDER.map(s => ({ s, arr: tasks.filter(x => x.status === s) }));
+
+  return (
+    <div className="scroll">
+      <table className="tbl" style={{ background: "var(--panel)" }}>
+        <thead><tr>
+          <th style={{ width: 80 }}>ID</th>
+          <th>{lang === "ar" ? "المهمة" : "Task"}</th>
+          <th style={{ width: 120 }}>{lang === "ar" ? "الحالة" : "Status"}</th>
+          <th style={{ width: 60 }}>{lang === "ar" ? "أولوية" : "Pri"}</th>
+          <th style={{ width: 120 }}>{t.assignee}</th>
+          <th style={{ width: 120 }}>{t.due}</th>
+          <th style={{ width: 120 }} className="num">{t.progress}</th>
+          <th style={{ width: 60 }} className="num">{t.estimate}</th>
+          <th style={{ width: 28 }}></th>
+        </tr></thead>
+        {grouped.map(({ s, arr }) => arr.length > 0 && (
+          <tbody key={s}>
+            <tr style={{ background: "var(--panel-2)" }}>
+              <td colSpan={9} style={{ height: 28, padding: "0 10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <StatusDot s={s} />
+                  <span style={{ fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-2)", fontWeight: 500 }}>{t.status[s]}</span>
+                  <span className="mono" style={{ fontSize: "var(--fs-xxs)", color: "var(--text-4)" }}>{arr.length}</span>
+                </div>
+              </td>
+            </tr>
+            {arr.map(tk => {
+              const late = isLate(tk);
+              const proj = projectById(tk.projectId);
+              return (
+                <tr key={tk.id} onClick={() => openTask(tk.id)} style={{ cursor: "pointer" }}>
+                  <td className="mono" style={{ color: "var(--text-4)", fontSize: "var(--fs-xxs)" }}>
+                    {allProjects && <><span style={{ width: 6, height: 6, background: proj.color, borderRadius: 2, display: "inline-block", marginInlineEnd: 5 }} />{proj.key}-</>}
+                    {tk.id.split("-")[1]}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="truncate">{tk.title}</span>
+                      {tk.tags.slice(0, 1).map(tag => <span key={tag} className="chip" style={{ height: 18, fontSize: 10 }}>{tag}</span>)}
+                      {tk.comments > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3, color: "var(--text-4)", fontSize: "var(--fs-xxs)" }}><Icon name="comment" size={10} />{tk.comments}</span>}
+                    </div>
+                  </td>
+                  <td style={{ position: "relative" }}>
+                    <div onClick={e => { e.stopPropagation(); setMenuId(menuId === tk.id ? null : tk.id); }}
+                         style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "2px 6px", borderRadius: 3, cursor: "pointer" }}
+                         className="hover-bg">
+                      <StatusDot s={tk.status} />
+                      <span style={{ fontSize: "var(--fs-xs)" }}>{t.status[tk.status]}</span>
+                      <Icon name="chevDown" size={10} style={{ color: "var(--text-4)" }} />
+                    </div>
+                    {menuId === tk.id && <StatusMenu value={tk.status} onChange={(s) => onChangeStatus(tk.id, s)} onClose={() => setMenuId(null)} lang={lang} t={t} />}
+                  </td>
+                  <td><PriorityFlag p={tk.priority} /></td>
+                  <td><AvatarStack users={tk.assignees.map(userById).filter(Boolean)} max={3} /></td>
+                  <td className="mono" style={{ fontSize: "var(--fs-xs)", color: late ? "var(--s-late)" : "var(--text-3)" }}>
+                    {tk.due ? formatShort(tk.due) : "—"}{late && <span style={{ marginInlineStart: 4 }}>· -{lateDays(tk)}d</span>}
+                  </td>
+                  <td><div style={{ display: "flex", alignItems: "center", gap: 6 }}><Progress value={tk.progress} /><span className="mono" style={{ fontSize: "var(--fs-xxs)", color: "var(--text-3)", minWidth: 28 }}>{tk.progress}%</span></div></td>
+                  <td className="num" style={{ color: "var(--text-3)", fontSize: "var(--fs-xs)" }}>{tk.est}{t.h}</td>
+                  <td><Icon name="moreV" size={12} style={{ color: "var(--text-4)" }} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        ))}
+      </table>
+    </div>
+  );
+};
+
+// ——— Gantt ———
+const GanttView = ({ p, lang, t, openTask, allProjects }) => {
+  const tasks = (allProjects ? TASKS : tasksOf(p.id)).filter(x => x.start && x.due);
+  // Determine date range
+  const allStarts = tasks.map(x => D(x.start));
+  const allDues = tasks.map(x => D(x.due));
+  const minD = new Date(Math.min(...allStarts));
+  const maxD = new Date(Math.max(...allDues));
+  minD.setDate(minD.getDate() - 3);
+  maxD.setDate(maxD.getDate() + 3);
+  const dayW = 18;
+  const totalDays = daysBetween(minD.toISOString().slice(0,10), maxD.toISOString().slice(0,10));
+  const width = totalDays * dayW;
+
+  // Group by week for header
+  const weeks = [];
+  const cur = new Date(minD);
+  while (cur <= maxD) {
+    weeks.push({ d: new Date(cur), label: `${String(cur.getDate()).padStart(2,"0")}.${String(cur.getMonth()+1).padStart(2,"0")}` });
+    cur.setDate(cur.getDate() + 7);
+  }
+
+  const todayOffset = daysBetween(minD.toISOString().slice(0,10), TODAY.toISOString().slice(0,10)) * dayW;
+
+  const posFor = (tk) => {
+    const off = daysBetween(minD.toISOString().slice(0,10), tk.start) * dayW;
+    const w = (daysBetween(tk.start, tk.due) + 1) * dayW;
+    return { left: off, width: Math.max(w, 12) };
+  };
+
+  return (
+    <div className="gantt" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <div className="gantt-left">
+        <div className="gantt-header" style={{ padding: "0 10px", alignItems: "center" }}>
+          <span style={{ fontSize: "var(--fs-xxs)", textTransform: "uppercase", color: "var(--text-3)", letterSpacing: "0.04em" }}>{lang === "ar" ? "المهمة" : "Task"}</span>
+        </div>
+        <div className="gantt-body">
+          {tasks.map(tk => (
+            <div key={tk.id} className="gantt-row" onClick={() => openTask(tk.id)} style={{ cursor: "pointer" }}>
+              <StatusDot s={tk.status} />
+              <span className="mono" style={{ fontSize: "var(--fs-xxs)", color: "var(--text-4)", width: 48, flexShrink: 0 }}>{tk.id}</span>
+              <span className="truncate" style={{ flex: 1 }}>{tk.title}</span>
+              <AvatarStack users={tk.assignees.map(userById).filter(Boolean)} max={2} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="gantt-right" style={{ position: "relative", minWidth: width }}>
+        <div className="gantt-header" style={{ width }}>
+          {weeks.map((w, i) => (
+            <div key={i} className="gh-cell" style={{ width: 7 * dayW }}>{w.label}</div>
+          ))}
+        </div>
+        <div className="gantt-body" style={{ width, position: "relative" }}>
+          {todayOffset > 0 && todayOffset < width && <div className="gantt-today" style={{ insetInlineStart: todayOffset }} />}
+          {tasks.map(tk => {
+            const { left, width: w } = posFor(tk);
+            const late = isLate(tk);
+            return (
+              <div key={tk.id} className="gantt-track" onClick={() => openTask(tk.id)} style={{ cursor: "pointer" }}>
+                <div className={"gantt-bar " + tk.status + (late ? " late" : "")}
+                     style={{ insetInlineStart: left, width: w }}
+                     title={tk.title}>
+                  {w > 80 && <span className="truncate" style={{ fontFamily: "var(--font-ar)", fontSize: 10 }}>{tk.title}</span>}
+                  {tk.progress > 0 && tk.progress < 100 && (
+                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to right, rgba(0,0,0,0.25) ${tk.progress}%, transparent ${tk.progress}%)` }} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ——— Calendar ———
+const CalendarView = ({ p, lang, t, openTask, allProjects }) => {
+  // April 2026
+  const year = 2026, month = 3; // 0-indexed: 3 = April
+  const first = new Date(year, month, 1);
+  const startOffset = first.getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  // Previous month filler
+  for (let i = 0; i < startOffset; i++) {
+    const d = new Date(year, month, -(startOffset - 1 - i));
+    cells.push({ d, other: true });
+  }
+  for (let i = 1; i <= daysInMonth; i++) cells.push({ d: new Date(year, month, i), other: false });
+  while (cells.length % 7 !== 0 || cells.length < 35) cells.push({ d: new Date(year, month + 1, cells.length - daysInMonth - startOffset + 1), other: true });
+
+  const tasks = allProjects ? TASKS : tasksOf(p.id);
+
+  return (
+    <div className="cal">
+      <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 8 }}>
+        <button className="btn icon sm"><Icon name="chevLeft" size={12} style={{ transform: lang === "ar" ? "rotate(180deg)" : "none" }} /></button>
+        <span style={{ fontSize: "var(--fs-md)", fontWeight: 600 }}>{t.months[month]} {year}</span>
+        <button className="btn icon sm"><Icon name="chevRight" size={12} style={{ transform: lang === "ar" ? "rotate(180deg)" : "none" }} /></button>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 4 }}>
+          <button className="btn sm" style={{ background: "var(--panel)" }}>{t.month}</button>
+          <button className="btn sm ghost">{t.week}</button>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+        <div className="cal-head">{t.days.map((d, i) => <div key={i}>{d}</div>)}</div>
+        <div className="cal-grid" style={{ flex: 1 }}>
+          {cells.map((c, i) => {
+            const iso = c.d.toISOString().slice(0,10);
+            const today = iso === TODAY.toISOString().slice(0,10);
+            const dayTasks = tasks.filter(x => x.due === iso);
+            return (
+              <div key={i} className={"cal-cell" + (c.other ? " other" : "") + (today ? " today" : "")}>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span className="d">{c.d.getDate()}</span>
+                  {today && <span className="chip accent" style={{ height: 14, fontSize: 9, marginInlineStart: 6 }}>{t.today}</span>}
+                </div>
+                {dayTasks.slice(0, 4).map(tk => (
+                  <div key={tk.id} className={"ev " + tk.status} onClick={() => openTask(tk.id)} style={{ cursor: "pointer" }}>
+                    {tk.id} · {tk.title}
+                  </div>
+                ))}
+                {dayTasks.length > 4 && <span style={{ fontSize: "var(--fs-xxs)", color: "var(--text-4)" }}>+{dayTasks.length - 4}</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ——— Task Side Panel ———
+const TaskPanel = ({ task, onClose, lang, t, onChangeStatus }) => {
+  if (!task) return null;
+  const [statusOpen, setStatusOpen] = useState(false);
+  const p = projectById(task.projectId);
+  const assignees = task.assignees.map(userById).filter(Boolean);
+  const late = isLate(task);
+  const comments = COMMENTS_BY_TASK[task.id] || [
+    { u: task.assignees[0] || "u2", when: lang === "ar" ? "قبل ساعة" : "1h ago", text: lang === "ar" ? "أضفت تفاصيل جديدة في الوصف، مراجعة رجاءً." : "Added more details to the description, please review." },
+    { u: "u1", when: lang === "ar" ? "قبل 25 د" : "25m ago", text: lang === "ar" ? "تمام، راجعت النقاط وعدّلت التقدير الزمني." : "Reviewed and adjusted the estimate." }
+  ];
+
+  return (
+    <aside className="side">
+      <div className="side-head">
+        <span className="mono" style={{ color: "var(--text-4)", fontSize: "var(--fs-xs)" }}>{task.id}</span>
+        <span style={{ width: 6, height: 6, borderRadius: 2, background: p.color }} />
+        <span className="truncate" style={{ fontSize: "var(--fs-xs)", color: "var(--text-3)" }}>{lang === "ar" ? p.name : p.en}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 4 }}>
+          <button className="btn ghost icon sm"><Icon name="link" size={12} /></button>
+          <button className="btn ghost icon sm"><Icon name="more" size={12} /></button>
+          <button className="btn ghost icon sm" onClick={onClose}><Icon name="close" size={12} /></button>
+        </div>
+      </div>
+      <div className="side-body">
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <div style={{ position: "relative", paddingTop: 4 }}>
+            <div onClick={() => setStatusOpen(!statusOpen)} style={{ cursor: "pointer" }}>
+              <StatusDot s={task.status} />
+            </div>
+            {statusOpen && <StatusMenu value={task.status} onChange={(s) => onChangeStatus(task.id, s)} onClose={() => setStatusOpen(false)} lang={lang} t={t} />}
+          </div>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: 500, lineHeight: 1.35 }}>{task.title}</h2>
+        </div>
+
+        {late && <div className="chip" style={{ marginTop: 10, color: "var(--s-late)", borderColor: "color-mix(in oklch, var(--s-late) 30%, transparent)", background: "color-mix(in oklch, var(--s-late) 12%, transparent)" }}>
+          <Icon name="alert" size={11} /> {lang === "ar" ? `متأخرة بـ ${lateDays(task)} يوم` : `Overdue by ${lateDays(task)} days`}
+        </div>}
+
+        <div style={{ marginTop: 14, paddingBottom: 10, borderBottom: "1px solid var(--border)" }}>
+          <div className="side-row"><span className="k">{lang === "ar" ? "الحالة" : "Status"}</span><span className="v" style={{ display: "flex", alignItems: "center", gap: 6 }}><StatusDot s={task.status} /> {t.status[task.status]}</span></div>
+          <div className="side-row"><span className="k">{lang === "ar" ? "الأولوية" : "Priority"}</span><span className="v" style={{ display: "flex", alignItems: "center", gap: 6 }}><PriorityFlag p={task.priority} /> {t.priority[task.priority]}</span></div>
+          <div className="side-row"><span className="k">{t.assignee}</span><span className="v" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {assignees.length === 0 ? <span style={{ color: "var(--text-4)" }}>{lang === "ar" ? "غير مُسنَد" : "Unassigned"}</span> :
+              assignees.map(u => <span key={u.id} style={{ display: "flex", alignItems: "center", gap: 4 }}><Avatar user={u} /><span style={{ fontSize: "var(--fs-xs)" }}>{lang === "ar" ? u.name : u.en}</span></span>)}
+          </span></div>
+          <div className="side-row"><span className="k">{t.due}</span><span className="v mono" style={{ color: late ? "var(--s-late)" : "var(--text)", fontSize: "var(--fs-sm)" }}>{task.due ? formatDate(task.due, lang) : "—"}</span></div>
+          <div className="side-row"><span className="k">{t.estimate} / {t.spent}</span><span className="v mono" style={{ fontSize: "var(--fs-sm)" }}>{task.est}{t.h} / <span style={{ color: task.spent > task.est ? "var(--s-late)" : "var(--text-2)" }}>{task.spent}{t.h}</span></span></div>
+          <div className="side-row"><span className="k">{t.progress}</span><span className="v" style={{ display: "flex", alignItems: "center", gap: 8 }}><Progress value={task.progress} /><span className="mono" style={{ fontSize: "var(--fs-xs)" }}>{task.progress}%</span></span></div>
+          {task.tags.length > 0 && <div className="side-row"><span className="k">Tags</span><span className="v" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{task.tags.map(tag => <span key={tag} className="chip" style={{ height: 18 }}>{tag}</span>)}</span></div>}
+          {task.deps.length > 0 && <div className="side-row"><span className="k">{t.dependencies}</span><span className="v" style={{ display: "flex", gap: 4 }}>{task.deps.map(d => <span key={d} className="chip mono" style={{ height: 18 }}><Icon name="link" size={10} />{d}</span>)}</span></div>}
+        </div>
+
+        {/* Description */}
+        <div style={{ marginTop: 14 }}>
+          <div className="label">{t.description}</div>
+          <div style={{ marginTop: 6, fontSize: "var(--fs-sm)", color: "var(--text-2)", lineHeight: 1.6 }}>
+            {task.description || (lang === "ar"
+              ? "هذه المهمة جزء من الخطة الرئيسية للمشروع. تتضمّن تحديث منطق العمل، كتابة اختبارات الوحدة، ومراجعة التأثير على الخدمات المرتبطة. المرجعية الفنية: RFC-24، ومخطط التسلسل في Notion."
+              : "This task is part of the main project plan. Includes business logic updates, unit tests, and impact review on related services. Reference: RFC-24, sequence diagram in Notion.")}
+          </div>
+        </div>
+
+        {/* Subtasks / checklist */}
+        <div style={{ marginTop: 16 }}>
+          <div className="label">{t.subtasks}</div>
+          <div style={{ marginTop: 6 }}>
+            {[
+              { done: true, t: lang === "ar" ? "مراجعة المتطلبات مع PM" : "Review requirements with PM" },
+              { done: true, t: lang === "ar" ? "إعداد بيئة التطوير" : "Set up dev environment" },
+              { done: task.progress > 50, t: lang === "ar" ? "كتابة الاختبارات" : "Write tests" },
+              { done: false, t: lang === "ar" ? "مراجعة الأداء" : "Performance review" },
+              { done: false, t: lang === "ar" ? "تحديث التوثيق" : "Update documentation" },
+            ].map((s, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", fontSize: "var(--fs-sm)" }}>
+                <span style={{ width: 14, height: 14, borderRadius: 3, border: `1px solid ${s.done ? "var(--accent)" : "var(--border-strong)"}`, background: s.done ? "var(--accent)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent-fg)" }}>
+                  {s.done && <Icon name="check" size={10} />}
+                </span>
+                <span style={{ color: s.done ? "var(--text-3)" : "var(--text)", textDecoration: s.done ? "line-through" : "none" }}>{s.t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Comments */}
+        <div style={{ marginTop: 18 }}>
+          <div className="label">{t.comments} · {comments.length}</div>
+          <div style={{ marginTop: 6 }}>
+            {comments.map((c, i) => {
+              const u = userById(c.u) || TEAM[0];
+              return (
+                <div key={i} className="comment">
+                  <Avatar user={u} />
+                  <div className="c-body">
+                    <div className="c-head"><span className="who">{lang === "ar" ? u.name : u.en}</span><span>·</span><span className="mono">{c.when}</span></div>
+                    <div className="c-text">{c.text}</div>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <Avatar user={userById("u2")} />
+              <div style={{ flex: 1, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 6, padding: 8 }}>
+                <textarea rows={2} placeholder={t.addComment} style={{ width: "100%", resize: "none", fontSize: "var(--fs-sm)" }} />
+                <div style={{ display: "flex", gap: 4, marginTop: 6, alignItems: "center" }}>
+                  <button className="btn ghost icon sm"><Icon name="paperclip" size={12} /></button>
+                  <span style={{ fontSize: "var(--fs-xxs)", color: "var(--text-4)" }}>{lang === "ar" ? "Markdown مدعوم" : "Markdown supported"}</span>
+                  <button className="btn primary sm" style={{ marginInlineStart: "auto" }}>{lang === "ar" ? "نشر" : "Post"}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+Object.assign(window, { ProjectHeader, KanbanView, ListView, GanttView, CalendarView, TaskPanel });
+
+/* global React, Icon, Avatar, AvatarStack, StatusDot, PriorityDot, PriorityFlag, Progress, userById, projectById, tasksOf, isLate, lateDays, formatDate, formatShort, D, daysBetween, TEAM, PROJECTS, TASKS, ACTIVITY, T_AR, T_EN, TODAY, ListView */
+
+// r
+
+// ——— Workload View ———
+const WorkloadView = ({ lang, t, openTask }) => {
+  // Week of TODAY (2026-04-16 Thu) — show Sun 2026-04-12 through Sat 2026-04-18
+  const weekStart = new Date("2026-04-12");
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
+  });
+
+  const rows = TEAM.map(u => {
+    const tasks = TASKS.filter(tk => tk.assignees.includes(u.id) && tk.status !== "done" && tk.start && tk.due);
+    // Per day buckets
+    const byDay = days.map(d => {
+      const iso = d.toISOString().slice(0, 10);
+      return tasks.filter(tk => tk.start <= iso && tk.due >= iso);
+    });
+    const totalHrs = tasks.reduce((s, tk) => s + (tk.est - (tk.spent || 0)) / Math.max(1, daysBetween(tk.start, tk.due) + 1) * 5, 0);
+    return { u, tasks, byDay, hrs: Math.round(totalHrs) };
+  });
+
+  return (
+    <div className="scroll">
+      <div className="subhead">
+        <h1>{t.workload}</h1>
+        <span className="sub">· {lang === "ar" ? "الأسبوع" : "Week of"} {formatShort(weekStart.toISOString().slice(0,10))}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 6 }}>
+          <button className="btn sm"><Icon name="chevLeft" size={12} style={{ transform: lang === "ar" ? "rotate(180deg)" : "none" }} /></button>
+          <button className="btn sm">{lang === "ar" ? "هذا الأسبوع" : "This week"}</button>
+          <button className="btn sm"><Icon name="chevRight" size={12} style={{ transform: lang === "ar" ? "rotate(180deg)" : "none" }} /></button>
+          <button className="btn sm"><Icon name="filter" size={12} /> {t.filter}</button>
+        </div>
+      </div>
+      <div className="wl-head">
+        <div className="wl-name">{lang === "ar" ? "عضو الفريق" : "Team member"}</div>
+        {days.map((d, i) => (
+          <div key={i} className="wl-day">
+            <div>{t.days[d.getDay()]}</div>
+            <div style={{ color: d.toISOString().slice(0,10) === TODAY.toISOString().slice(0,10) ? "var(--accent)" : "var(--text-2)", fontSize: "var(--fs-xs)" }}>{String(d.getDate()).padStart(2,"0")}</div>
+          </div>
+        ))}
+      </div>
+      {rows.map(({ u, byDay, hrs }) => {
+        const over = hrs > 40;
+        return (
+          <div key={u.id} className="wl-row">
+            <div className="wl-name">
+              <Avatar user={u} size="md" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="truncate" style={{ fontSize: "var(--fs-sm)" }}>{lang === "ar" ? u.name : u.en}</div>
+                <div className="meta truncate">{u.role} · <span className="mono">{hrs}h/40h</span></div>
+              </div>
+            </div>
+            {byDay.map((tasks, i) => {
+              const dayHrs = tasks.length * 2 + tasks.reduce((s, t) => s + (t.priority === "crit" ? 2 : 0), 0);
+              const dayOver = dayHrs > 8;
+              return (
+                <div key={i} className="wl-day" style={{ background: dayOver ? "color-mix(in oklch, var(--s-blocked) 6%, transparent)" : "transparent" }}>
+                  <span className={"wl-load" + (dayOver ? " over" : "")}>{dayHrs}h</span>
+                  {tasks.slice(0, 3).map(tk => {
+                    const p = projectById(tk.projectId);
+                    return (
+                      <div key={tk.id} className={"wl-bar" + (dayOver ? " over" : "")}
+                           onClick={() => openTask(tk.id)}
+                           style={{ cursor: "pointer", borderColor: p.color }}
+                           title={tk.title}>
+                        <span className="mono" style={{ fontSize: 9, color: "var(--text-4)", marginInlineEnd: 4 }}>{tk.id}</span>
+                        {tk.title}
+                      </div>
+                    );
+                  })}
+                  {tasks.length > 3 && <span style={{ fontSize: 9, color: "var(--text-4)" }}>+{tasks.length - 3}</span>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ——— My Tasks View ———
+const MyTasksView = ({ lang, t, openTask, onChangeStatus }) => {
+  const me = userById("u2"); // Omar the tech lead
+  const [filter, setFilter] = useState("");
+  const myTasks = TASKS.filter(tk => tk.assignees.includes(me.id));
+  const open = myTasks.filter(x => x.status !== "done").length;
+  const late = myTasks.filter(isLate).length;
+  const done = myTasks.filter(x => x.status === "done").length;
+
+  // Fake a custom project object for ListView
+  const fake = { id: "me", color: "var(--accent)" };
+
+  return (
+    <div className="main" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div className="subhead">
+        <Avatar user={me} size="md" />
+        <h1>{t.myTasks}</h1>
+        <span className="sub">· {lang === "ar" ? me.name : me.en}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+          <span className="chip"><span className="mono">{open}</span> {lang === "ar" ? "مفتوحة" : "open"}</span>
+          <span className="chip" style={{ color: "var(--s-late)" }}><span className="mono">{late}</span> {t.late}</span>
+          <span className="chip" style={{ color: "var(--accent)" }}><span className="mono">{done}</span> {lang === "ar" ? "منجزة" : "done"}</span>
+        </div>
+      </div>
+      <div className="toolbar">
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--panel-2)", border: "1px solid var(--border)", borderRadius: 4, padding: "0 8px", height: 26 }}>
+          <Icon name="search" size={12} style={{ color: "var(--text-4)" }} />
+          <input placeholder={lang === "ar" ? "ابحث في مهامي…" : "Search my tasks…"} value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 180, height: 26 }} />
+        </div>
+        <button className="btn sm"><Icon name="filter" size={12} /> {t.filter}</button>
+        <button className="btn sm"><Icon name="sort" size={12} /> {lang === "ar" ? "حسب الاستحقاق" : "By due date"}</button>
+      </div>
+      <div className="scroll">
+        <ListView p={fake} lang={lang} t={t} filter={filter} openTask={openTask} onChangeStatus={onChangeStatus} allProjects={true} />
+      </div>
+    </div>
+  );
+};
+
+// ——— Analytics (simpler: reuses dashboard building blocks in a denser layout) ———
+const AnalyticsView = ({ lang, t }) => {
+  const totalHrs = TASKS.reduce((s, t) => s + (t.spent || 0), 0);
+  const estHrs = TASKS.reduce((s, t) => s + (t.est || 0), 0);
+  return (
+    <div className="scroll">
+      <div className="subhead">
+        <h1>{t.analytics}</h1>
+        <span className="sub">· {lang === "ar" ? "الربع الثاني 2026" : "Q2 2026"}</span>
+        <div style={{ marginInlineStart: "auto", display: "flex", gap: 6 }}>
+          <button className="btn sm"><Icon name="paperclip" size={12} /> {lang === "ar" ? "تصدير PDF" : "Export PDF"}</button>
+          <button className="btn sm"><Icon name="paperclip" size={12} /> {lang === "ar" ? "تصدير Excel" : "Export Excel"}</button>
+        </div>
+      </div>
+      <div className="dash">
+        <div className="col-3 kpi">
+          <span className="kpi-label">{lang === "ar" ? "مهام منجزة" : "Completed"}</span>
+          <span className="kpi-value num">{TASKS.filter(x => x.status === "done").length}</span>
+          <span className="kpi-sub"><span className="trend-up">▲ 12%</span>{lang === "ar" ? "vs الربع السابق" : "vs last Q"}</span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{lang === "ar" ? "ساعات فعلية" : "Actual hours"}</span>
+          <span className="kpi-value num">{totalHrs}<span style={{ fontSize: 14, color: "var(--text-4)" }}>/{estHrs}</span></span>
+          <span className="kpi-sub">{lang === "ar" ? "انحراف" : "Variance"} <span className="mono trend-down">+{Math.round((totalHrs - estHrs) / estHrs * 100)}%</span></span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{lang === "ar" ? "وسطي الإنجاز" : "Avg completion"}</span>
+          <span className="kpi-value num">{Math.round(TASKS.reduce((s, t) => s + t.progress, 0) / TASKS.length)}%</span>
+          <span className="kpi-sub"><span className="trend-up">▲ 4%</span></span>
+        </div>
+        <div className="col-3 kpi">
+          <span className="kpi-label">{lang === "ar" ? "أعضاء نشطون" : "Active members"}</span>
+          <span className="kpi-value num">{TEAM.length}</span>
+          <span className="kpi-sub">{lang === "ar" ? "عبر" : "across"} {PROJECTS.length} {lang === "ar" ? "مشاريع" : "projects"}</span>
+        </div>
+
+        {/* Member breakdown */}
+        <div className="col-12 panel">
+          <div className="panel-head"><h3>{lang === "ar" ? "أداء الأعضاء" : "Member performance"}</h3></div>
+          <table className="tbl">
+            <thead><tr>
+              <th>{lang === "ar" ? "العضو" : "Member"}</th>
+              <th>{lang === "ar" ? "الدور" : "Role"}</th>
+              <th className="num">{lang === "ar" ? "منجزة" : "Done"}</th>
+              <th className="num">{lang === "ar" ? "جارية" : "Active"}</th>
+              <th className="num">{lang === "ar" ? "متأخرة" : "Late"}</th>
+              <th className="num">{lang === "ar" ? "متوسط التأخير" : "Avg delay"}</th>
+              <th className="num">{lang === "ar" ? "معدل الإنجاز" : "Completion rate"}</th>
+              <th>{lang === "ar" ? "الاتجاه" : "Trend"}</th>
+            </tr></thead>
+            <tbody>
+              {TEAM.map((u, i) => {
+                const tasks = TASKS.filter(t => t.assignees.includes(u.id));
+                const done = tasks.filter(t => t.status === "done").length;
+                const active = tasks.filter(t => t.status !== "done").length;
+                const lateN = tasks.filter(isLate).length;
+                const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+                return (
+                  <tr key={u.id}>
+                    <td><div style={{ display: "flex", alignItems: "center", gap: 8 }}><Avatar user={u} /><span>{lang === "ar" ? u.name : u.en}</span></div></td>
+                    <td style={{ color: "var(--text-3)", fontSize: "var(--fs-xs)" }}>{u.role}</td>
+                    <td className="num">{done}</td>
+                    <td className="num">{active}</td>
+                    <td className="num" style={{ color: lateN ? "var(--s-late)" : "var(--text-3)" }}>{lateN || "—"}</td>
+                    <td className="num mono" style={{ color: "var(--text-3)" }}>{((i * 0.7 + 1.2) % 4).toFixed(1)}d</td>
+                    <td className="num"><div style={{ display: "flex", alignItems: "center", gap: 6 }}><Progress value={rate} /><span className="mono">{rate}%</span></div></td>
+                    <td><svg width={60} height={16}><polyline points={Array.from({ length: 8 }, (_, j) => `${j * 8},${8 - Math.sin(i + j) * 4}`).join(" ")} stroke="var(--accent)" strokeWidth="1" fill="none" /></svg></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { WorkloadView, MyTasksView, AnalyticsView });
+
+/* global React, ReactDOM, Sidebar, Topbar, CommandPalette, Tweaks, Dashboard, ProjectHeader, KanbanView, ListView, GanttView, CalendarView, TaskPanel, WorkloadView, MyTasksView, AnalyticsView, TASKS, T_AR, T_EN, projectById */
+
+// r
+
+const LS_KEY = "trendpm.state";
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": 162,
+  "theme": "dark",
+  "lang": "ar",
+  "font": "plex"
+}/*EDITMODE-END*/;
+
+function App() {
+  // Load persisted state
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } })();
+  const [lang, setLang] = useState(saved.lang || TWEAK_DEFAULTS.lang);
+  const [theme, setTheme] = useState(saved.theme || TWEAK_DEFAULTS.theme);
+  const [accent, setAccent] = useState(saved.accent ?? TWEAK_DEFAULTS.accent);
+  const [font, setFont] = useState(saved.font || TWEAK_DEFAULTS.font);
+  const [view, setView] = useState(saved.view || { type: "dash" });
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+  const [openTaskId, setOpenTaskId] = useState(null);
+  const [taskOverrides, setTaskOverrides] = useState(saved.taskOverrides || {});
+  const [boardFilter, setBoardFilter] = useState("");
+
+  const t = lang === "ar" ? T_AR : T_EN;
+
+  // Persist
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ lang, theme, accent, font, view, taskOverrides }));
+  }, [lang, theme, accent, font, view, taskOverrides]);
+
+  // Apply theme / dir / accent
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    document.documentElement.setAttribute("lang", lang);
+    document.documentElement.style.setProperty("--accent-h", accent);
+    const fontMap = {
+      plex: { ar: '"IBM Plex Sans Arabic", system-ui, sans-serif', en: '"IBM Plex Sans", system-ui, sans-serif' },
+      readex: { ar: '"Readex Pro", system-ui, sans-serif', en: '"Inter", system-ui, sans-serif' },
+      cairo: { ar: '"Cairo", system-ui, sans-serif', en: '"Inter", system-ui, sans-serif' },
+    };
+    document.documentElement.style.setProperty("--font-ar", fontMap[font].ar);
+    document.documentElement.style.setProperty("--font-en", fontMap[font].en);
+  }, [theme, lang, accent, font]);
+
+  // Tweaks host protocol
+  useEffect(() => {
+    const h = (e) => {
+      const d = e.data || {};
+      if (d.type === "__activate_edit_mode") setTweaksOpen(true);
+      else if (d.type === "__deactivate_edit_mode") setTweaksOpen(false);
+    };
+    window.addEventListener("message", h);
+    window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+    return () => window.removeEventListener("message", h);
+  }, []);
+
+  const pushTweak = (edits) => {
+    window.parent.postMessage({ type: "__edit_mode_set_keys", edits }, "*");
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const h = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setCmdkOpen(true); }
+      else if (e.key === "Escape") { setOpenTaskId(null); }
+      else if (e.key === "g" && !e.target.closest("input,textarea")) { window._gPending = true; setTimeout(() => { window._gPending = false; }, 800); }
+      else if (window._gPending && !e.target.closest("input,textarea")) {
+        const k = e.key.toLowerCase();
+        window._gPending = false;
+        if (k === "d") setView({ type: "dash" });
+        else if (k === "m") setView({ type: "mytasks" });
+        else if (k === "w") setView({ type: "workload" });
+        else if (k === "a") setView({ type: "analytics" });
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+
+  // Task ops
+  const allTasks = useMemo(() => {
+    return TASKS.map(t => taskOverrides[t.id] ? { ...t, ...taskOverrides[t.id] } : t);
+  }, [taskOverrides]);
+
+  // Patch the global TASKS reference lookup via the same array (simpler: override via rebuild)
+  // Since our components read window.TASKS directly, we mutate on change.
+  useEffect(() => {
+    allTasks.forEach(at => {
+      const orig = TASKS.find(x => x.id === at.id);
+      if (orig) Object.assign(orig, at);
+    });
+  }, [allTasks]);
+
+  const onChangeStatus = (taskId, newStatus) => {
+    setTaskOverrides(o => ({ ...o, [taskId]: { ...(o[taskId] || {}), status: newStatus, progress: newStatus === "done" ? 100 : (o[taskId]?.progress ?? undefined) } }));
+  };
+
+  const onMoveTask = (taskId, newStatus) => onChangeStatus(taskId, newStatus);
+
+  const openTask = (id) => setOpenTaskId(id);
+  const currentTask = openTaskId ? TASKS.find(x => x.id === openTaskId) : null;
+
+  // Render view
+  const renderView = () => {
+    if (view.type === "dash") return <Dashboard lang={lang} t={t} setView={setView} openTask={openTask} />;
+    if (view.type === "mytasks") return <MyTasksView lang={lang} t={t} openTask={openTask} onChangeStatus={onChangeStatus} />;
+    if (view.type === "workload") return <WorkloadView lang={lang} t={t} openTask={openTask} />;
+    if (view.type === "analytics") return <AnalyticsView lang={lang} t={t} />;
+    if (view.type === "project") {
+      const p = projectById(view.id);
+      if (!p) return null;
+      const sub = view.sub || "board";
+      return (
+        <>
+          <ProjectHeader p={p} sub={sub} setSub={(s) => setView({ ...view, sub: s })} lang={lang} t={t} filter={boardFilter} setFilter={setBoardFilter} />
+          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            {sub === "board" && <KanbanView p={p} lang={lang} t={t} filter={boardFilter} openTask={openTask} onMove={onMoveTask} />}
+            {sub === "list" && <ListView p={p} lang={lang} t={t} filter={boardFilter} openTask={openTask} onChangeStatus={onChangeStatus} />}
+            {sub === "gantt" && <GanttView p={p} lang={lang} t={t} openTask={openTask} />}
+            {sub === "calendar" && <CalendarView p={p} lang={lang} t={t} openTask={openTask} />}
+          </div>
+        </>
+      );
+    }
+  };
+
+  return (
+    <div className="app">
+      <Topbar view={view} lang={lang} setLang={(l) => { setLang(l); pushTweak({ lang: l }); }} theme={theme} setTheme={(x) => { setTheme(x); pushTweak({ theme: x }); }} openCmdk={() => setCmdkOpen(true)} t={t} />
+      <Sidebar view={view} setView={setView} lang={lang} t={t} />
+      <main className="main" style={{ position: "relative" }}>
+        {renderView()}
+        {currentTask && <TaskPanel task={currentTask} onClose={() => setOpenTaskId(null)} lang={lang} t={t} onChangeStatus={onChangeStatus} />}
+      </main>
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} onGo={setView} lang={lang} t={t} />
+      <Tweaks open={tweaksOpen}
+              lang={lang} setLang={(l) => { setLang(l); pushTweak({ lang: l }); }}
+              theme={theme} setTheme={(x) => { setTheme(x); pushTweak({ theme: x }); }}
+              accent={accent} setAccent={(a) => { setAccent(a); pushTweak({ accent: a }); }}
+              font={font} setFont={(f) => { setFont(f); pushTweak({ font: f }); }} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script></body></html>
