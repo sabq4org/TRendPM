@@ -4,10 +4,10 @@ import { getDictionary } from "@/lib/i18n";
 import { getTasks } from "@/lib/db/queries";
 import { TODAY, daysBetween, isLate, toIsoDate } from "@/lib/utils";
 import { AvatarStack, StatusDot } from "@/components/primitives";
-import type { TaskStatus } from "@/lib/db/schema";
+import { TASK_STATUSES, type TaskStatus } from "@/lib/db/schema";
 import Link from "next/link";
 
-const DAY_W = 18;
+const DAY_W = 20;
 
 const STATUS_CLS: Record<TaskStatus, string> = {
   todo: "todo",
@@ -16,6 +16,23 @@ const STATUS_CLS: Record<TaskStatus, string> = {
   blocked: "blocked",
   done: "done",
 };
+
+const STATUS_CSS_VAR: Record<TaskStatus, string> = {
+  todo: "var(--s-todo)",
+  in_progress: "var(--s-progress)",
+  in_review: "var(--s-review)",
+  blocked: "var(--s-blocked)",
+  done: "var(--s-done)",
+};
+
+const STATUS_ORDER: TaskStatus[] = [
+  "in_progress",
+  "in_review",
+  "blocked",
+  "todo",
+  "done",
+];
+void TASK_STATUSES;
 
 function addDays(d: Date, n: number): Date {
   const r = new Date(d);
@@ -103,19 +120,22 @@ export default async function GanttPage({
   const starts = dated.map((x) => x.start.getTime());
   const ends = dated.map((x) => x.end.getTime());
   let minD = startOfWeekMon(new Date(Math.min(...starts)));
-  minD = addDays(minD, -3);
+  minD = addDays(minD, -7);
   let maxD = new Date(Math.max(...ends));
-  maxD = addDays(maxD, 3);
+  maxD = addDays(maxD, 7);
+  // round up to a multiple of 7 days so the last week cell is complete
+  const rawDays = daysBetween(toIsoDate(minD), toIsoDate(maxD)) + 1;
+  const totalDays = Math.ceil(rawDays / 7) * 7;
+  maxD = addDays(minD, totalDays - 1);
 
   const minIso = toIsoDate(minD);
-  const maxIso = toIsoDate(maxD);
-  const totalDays = daysBetween(minIso, maxIso) + 1;
   const width = totalDays * DAY_W;
 
-  const weeks: { label: string }[] = [];
+  const weeks: { d: Date; label: string }[] = [];
   for (let i = 0; i < totalDays; i += 7) {
     const d = addDays(minD, i);
     weeks.push({
+      d,
       label: `${String(d.getDate()).padStart(2, "0")}.${String(
         d.getMonth() + 1
       ).padStart(2, "0")}`,
@@ -129,10 +149,24 @@ export default async function GanttPage({
   const posFor = (start: Date, end: Date) => {
     const off = daysBetween(minIso, toIsoDate(start)) * DAY_W;
     const w = (daysBetween(toIsoDate(start), toIsoDate(end)) + 1) * DAY_W;
-    return { left: off, width: Math.max(w, 12) };
+    return { left: off, width: Math.max(w, 10) };
   };
 
+  // ── Group by status ──
+  const grouped = STATUS_ORDER.map((status) => ({
+    status,
+    items: dated
+      .filter(({ task }) => (task.status as TaskStatus) === status)
+      .sort((a, b) => a.start.getTime() - b.start.getTime()),
+  })).filter((g) => g.items.length > 0);
+
+  const overallProgress =
+    Math.round(
+      dated.reduce((s, { task }) => s + task.progress, 0) / dated.length
+    ) || 0;
+
   const headerText = locale === "ar" ? "المهمة" : "Task";
+  const rangeLabel = `${weekShort(minD)} → ${weekShort(maxD)}`;
 
   return (
     <div
@@ -144,12 +178,26 @@ export default async function GanttPage({
         minHeight: 0,
       }}
     >
+      {/* Summary bar */}
+      <div className="gantt-summary">
+        <span className="mono gs-range">{rangeLabel}</span>
+        <span className="gs-progress-wrap">
+          <span className="gs-progress-val mono">{overallProgress}%</span>
+          <span className="gs-progress-bar">
+            <span style={{ width: `${overallProgress}%` }} />
+          </span>
+        </span>
+        <span className="mono gs-count">
+          {dated.length}
+          <span className="gs-count-label">
+            {locale === "ar" ? " مهمة مجدولة" : " scheduled"}
+          </span>
+        </span>
+      </div>
+
       <div className="gantt" style={{ flex: 1, minHeight: 0 }}>
         <div className="gantt-left">
-          <div
-            className="gantt-header"
-            style={{ padding: "0 10px", alignItems: "center" }}
-          >
+          <div className="gantt-header gantt-left-head">
             <span
               style={{
                 fontSize: "var(--fs-xxs)",
@@ -172,47 +220,94 @@ export default async function GanttPage({
             </span>
           </div>
           <div className="gantt-body">
-            {dated.map(({ task }) => (
-              <Link
-                key={task.id}
-                href={`?task=${task.id}`}
-                scroll={false}
-                className="gantt-row"
-                style={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}
-              >
-                <StatusDot s={task.status as TaskStatus} />
-                <span
-                  className="mono"
+            {grouped.map((group) => (
+              <div key={group.status}>
+                <div
+                  className="gantt-group-row"
                   style={{
-                    fontSize: "var(--fs-xxs)",
-                    color: "var(--text-4)",
-                    width: 54,
-                    flexShrink: 0,
+                    ["--group-color" as string]: STATUS_CSS_VAR[group.status],
                   }}
                 >
-                  {task.code}
-                </span>
-                <span
-                  className="truncate"
-                  style={{ flex: 1, minWidth: 0, color: "var(--text)" }}
-                >
-                  {task.title}
-                </span>
-                {task.assignees.length > 0 && (
-                  <AvatarStack users={task.assignees} max={2} />
-                )}
-              </Link>
+                  <span
+                    className="gantt-group-swatch"
+                    style={{ background: STATUS_CSS_VAR[group.status] }}
+                  />
+                  <span className="gantt-group-label">
+                    {dict.status[group.status]}
+                  </span>
+                  <span className="gantt-group-count mono">
+                    {group.items.length}
+                  </span>
+                </div>
+                {group.items.map(({ task }) => (
+                  <Link
+                    key={task.id}
+                    href={`?task=${task.id}`}
+                    scroll={false}
+                    className="gantt-row"
+                    style={{
+                      cursor: "pointer",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    <StatusDot s={task.status as TaskStatus} />
+                    <span
+                      className="mono"
+                      style={{
+                        fontSize: "var(--fs-xxs)",
+                        color: "var(--text-4)",
+                        width: 54,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {task.code}
+                    </span>
+                    <span
+                      className="truncate"
+                      style={{ flex: 1, minWidth: 0, color: "var(--text)" }}
+                    >
+                      {task.title}
+                    </span>
+                    {task.assignees.length > 0 && (
+                      <AvatarStack users={task.assignees} max={2} />
+                    )}
+                  </Link>
+                ))}
+              </div>
             ))}
           </div>
         </div>
+
         <div
           className="gantt-right"
           style={{ position: "relative", minWidth: width }}
         >
           <div className="gantt-header" style={{ width }}>
             {weeks.map((w, i) => (
-              <div key={i} className="gh-cell" style={{ width: 7 * DAY_W }}>
-                {w.label}
+              <div
+                key={i}
+                className="gh-cell"
+                style={{
+                  width: 7 * DAY_W,
+                  position: "relative",
+                }}
+              >
+                <span>{w.label}</span>
+                {w.d.getDate() <= 7 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      insetInlineStart: 4,
+                      fontSize: 8,
+                      color: "var(--text-4)",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {monthShort(w.d, locale)}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -223,85 +318,123 @@ export default async function GanttPage({
                 style={{ insetInlineStart: todayOffset }}
               />
             )}
-            {dated.map(({ task, start, end }) => {
-              const { left, width: w } = posFor(start, end);
-              const late = isLate({ status: task.status, dueDate: task.dueDate });
-              const statusCls = STATUS_CLS[task.status as TaskStatus] ?? "todo";
-              return (
-                <Link
-                  key={task.id}
-                  href={`?task=${task.id}`}
-                  scroll={false}
-                  className="gantt-track"
-                  style={{ display: "block", textDecoration: "none" }}
+            {grouped.map((group) => (
+              <div key={group.status}>
+                <div
+                  className="gantt-group-track"
+                  style={{
+                    width,
+                    ["--group-color" as string]: STATUS_CSS_VAR[group.status],
+                  }}
                 >
-                  <div
-                    className={`gantt-bar ${statusCls}${late ? " late" : ""}`}
-                    style={{ insetInlineStart: left, width: w }}
-                    title={`${task.code} · ${task.title}`}
-                  >
-                    {w > 80 && (
-                      <span className="truncate" style={{ fontSize: 10 }}>
-                        {task.title}
-                      </span>
-                    )}
-                    {task.progress > 0 && task.progress < 100 && (
+                  <span className="gantt-group-line" />
+                </div>
+                {group.items.map(({ task, start, end }) => {
+                  const { left, width: w } = posFor(start, end);
+                  const late = isLate({
+                    status: task.status,
+                    dueDate: task.dueDate,
+                  });
+                  const statusCls =
+                    STATUS_CLS[task.status as TaskStatus] ?? "todo";
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`?task=${task.id}`}
+                      scroll={false}
+                      className="gantt-track"
+                      style={{
+                        display: "block",
+                        textDecoration: "none",
+                      }}
+                    >
                       <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: `linear-gradient(to right, rgba(0,0,0,0.28) ${task.progress}%, transparent ${task.progress}%)`,
-                          pointerEvents: "none",
-                        }}
-                      />
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
+                        className={`gantt-bar ${statusCls}${late ? " late" : ""}`}
+                        style={{ insetInlineStart: left, width: w }}
+                        title={`${task.code} · ${task.title}`}
+                      >
+                        {w > 56 && (
+                          <span className="truncate gantt-bar-label">
+                            {task.title}
+                          </span>
+                        )}
+                        {task.progress > 0 && task.progress < 100 && (
+                          <div
+                            className="gantt-bar-fill"
+                            style={{ width: `${task.progress}%` }}
+                          />
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      {/* Legend below */}
-      <div
-        style={{
-          display: "flex",
-          gap: 14,
-          padding: "8px 16px",
-          borderTop: "1px solid var(--border)",
-          fontSize: "var(--fs-xxs)",
-          color: "var(--text-3)",
-          background: "var(--panel)",
-          flexWrap: "wrap",
-        }}
-      >
-        <LegendDot cls="todo" label={dict.status.todo} />
-        <LegendDot cls="progress" label={dict.status.in_progress} />
-        <LegendDot cls="review" label={dict.status.in_review} />
-        <LegendDot cls="blocked" label={dict.status.blocked} />
-        <LegendDot cls="done" label={dict.status.done} />
-        <span style={{ marginInlineStart: "auto", fontFamily: "var(--font-mono)" }}>
-          {toIsoDate(minD)} → {toIsoDate(maxD)}
+
+      {/* Footer legend */}
+      <div className="gantt-legend">
+        {STATUS_ORDER.map((s) => (
+          <span key={s} className="gantt-legend-item">
+            <span
+              className="gantt-legend-swatch"
+              style={{ background: STATUS_CSS_VAR[s] }}
+            />
+            {dict.status[s]}
+          </span>
+        ))}
+        <span className="gantt-legend-item">
+          <span
+            className="gantt-legend-swatch"
+            style={{
+              background: "transparent",
+              outline: "1px dashed var(--s-late)",
+              outlineOffset: -1,
+            }}
+          />
+          {locale === "ar" ? "متأخرة" : "Late"}
         </span>
       </div>
     </div>
   );
 }
 
-function LegendDot({ cls, label }: { cls: string; label: string }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-      <span
-        className={`gantt-bar ${cls}`}
-        style={{
-          position: "static",
-          width: 14,
-          height: 10,
-          padding: 0,
-          top: 0,
-        }}
-      />
-      {label}
-    </span>
-  );
+function weekShort(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}.${String(
+    d.getMonth() + 1
+  ).padStart(2, "0")}`;
+}
+
+function monthShort(d: Date, locale: "ar" | "en"): string {
+  const ar = [
+    "ينا",
+    "فبر",
+    "مار",
+    "أبر",
+    "ماي",
+    "يون",
+    "يول",
+    "أغس",
+    "سبت",
+    "أكت",
+    "نوف",
+    "ديس",
+  ];
+  const en = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  return (locale === "ar" ? ar : en)[d.getMonth()];
 }
