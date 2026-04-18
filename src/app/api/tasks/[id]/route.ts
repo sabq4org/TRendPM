@@ -92,6 +92,7 @@ export async function GET(
       actualHours: task.actualHours,
       tags: task.tags,
       projectId: task.projectId,
+      color: task.color,
     },
     project: projRows[0] ?? null,
     assignees: assigneeRows

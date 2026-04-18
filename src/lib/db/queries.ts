@@ -86,6 +86,7 @@ export async function getTasks(workspaceId: string, opts?: { projectId?: string 
       actualHours: tasks.actualHours,
       position: tasks.position,
       tags: tasks.tags,
+      color: tasks.color,
       createdAt: tasks.createdAt,
     })
     .from(tasks)

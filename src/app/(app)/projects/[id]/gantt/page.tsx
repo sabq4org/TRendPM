@@ -7,7 +7,9 @@ import { AvatarStack, StatusDot } from "@/components/primitives";
 import { TASK_STATUSES, type TaskStatus } from "@/lib/db/schema";
 import Link from "next/link";
 
-const DAY_W = 20;
+const DAY_W = 22;
+const MIN_TOTAL_DAYS = 84; // ~12 weeks -> ensures timeline fills the viewport
+const DEFAULT_DURATION_DAYS = 5;
 
 const STATUS_CLS: Record<TaskStatus, string> = {
   todo: "todo",
@@ -49,6 +51,14 @@ function startOfWeekMon(d: Date): Date {
   return r;
 }
 
+function durationFromEstimate(hours: string | null | undefined): number | null {
+  if (!hours) return null;
+  const n = Number(hours);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  // ~8 hours per work day, at least 1 day
+  return Math.max(1, Math.round(n / 8));
+}
+
 export default async function GanttPage({
   params,
 }: {
@@ -61,20 +71,35 @@ export default async function GanttPage({
 
   const tasks = await getTasks(user.workspaceId, { projectId: id });
 
-  const dated = tasks
-    .map((t) => {
-      let start = t.startDate ? new Date(t.startDate) : null;
-      let end = t.dueDate ? new Date(t.dueDate) : null;
-      if (!start && end) start = addDays(end, -2);
-      if (!end && start) end = addDays(start, 2);
-      if (!start || !end) return null;
+  // Always place every task on the chart. Synthesize sensible ranges when
+  // dates are missing so bars are visible and span a meaningful duration.
+  const dated = tasks.map((t) => {
+    const est = durationFromEstimate(t.estimatedHours);
+    let start = t.startDate ? new Date(t.startDate) : null;
+    let end = t.dueDate ? new Date(t.dueDate) : null;
+
+    if (start && end) {
       if (end.getTime() < start.getTime()) end = start;
-      return { task: t, start, end };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+    } else if (start && !end) {
+      end = addDays(start, est ?? DEFAULT_DURATION_DAYS);
+    } else if (!start && end) {
+      start = addDays(end, -(est ?? DEFAULT_DURATION_DAYS));
+    } else {
+      // No dates -> anchor to createdAt (or today) and extend by estimate/default
+      const anchor = t.createdAt ? new Date(t.createdAt) : new Date();
+      anchor.setHours(0, 0, 0, 0);
+      start = anchor;
+      end = addDays(anchor, est ?? DEFAULT_DURATION_DAYS);
+    }
+    return {
+      task: t,
+      start: start!,
+      end: end!,
+      synthetic: !t.startDate || !t.dueDate,
+    };
+  });
 
   if (dated.length === 0) {
-    const hasTasks = tasks.length > 0;
     return (
       <div className="scroll" style={{ padding: 16 }}>
         <div
@@ -84,34 +109,9 @@ export default async function GanttPage({
             textAlign: "center",
             color: "var(--text-3)",
             fontSize: "var(--fs-sm)",
-            lineHeight: 1.7,
           }}
         >
-          {hasTasks ? (
-            locale === "ar" ? (
-              <>
-                لعرض الـ Gantt، أضف <b style={{ color: "var(--text)" }}>تاريخ بدء</b> أو{" "}
-                <b style={{ color: "var(--text)" }}>تاريخ استحقاق</b> للمهام من لوحة التفاصيل.
-                <br />
-                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-4)" }}>
-                  المهام الحالية: {tasks.length}
-                </span>
-              </>
-            ) : (
-              <>
-                Add a <b style={{ color: "var(--text)" }}>start date</b> or{" "}
-                <b style={{ color: "var(--text)" }}>due date</b> to your tasks to see them on the Gantt.
-                <br />
-                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-4)" }}>
-                  Current tasks: {tasks.length}
-                </span>
-              </>
-            )
-          ) : locale === "ar" ? (
-            "لا توجد مهام بعد."
-          ) : (
-            "No tasks yet."
-          )}
+          {locale === "ar" ? "لا توجد مهام بعد." : "No tasks yet."}
         </div>
       </div>
     );
@@ -122,9 +122,13 @@ export default async function GanttPage({
   let minD = startOfWeekMon(new Date(Math.min(...starts)));
   minD = addDays(minD, -7);
   let maxD = new Date(Math.max(...ends));
-  maxD = addDays(maxD, 7);
-  // round up to a multiple of 7 days so the last week cell is complete
-  const rawDays = daysBetween(toIsoDate(minD), toIsoDate(maxD)) + 1;
+  maxD = addDays(maxD, 14);
+
+  let rawDays = daysBetween(toIsoDate(minD), toIsoDate(maxD)) + 1;
+  if (rawDays < MIN_TOTAL_DAYS) {
+    maxD = addDays(minD, MIN_TOTAL_DAYS - 1);
+    rawDays = MIN_TOTAL_DAYS;
+  }
   const totalDays = Math.ceil(rawDays / 7) * 7;
   maxD = addDays(minD, totalDays - 1);
 
@@ -149,10 +153,9 @@ export default async function GanttPage({
   const posFor = (start: Date, end: Date) => {
     const off = daysBetween(minIso, toIsoDate(start)) * DAY_W;
     const w = (daysBetween(toIsoDate(start), toIsoDate(end)) + 1) * DAY_W;
-    return { left: off, width: Math.max(w, 10) };
+    return { left: off, width: Math.max(w, 20) };
   };
 
-  // ── Group by status ──
   const grouped = STATUS_ORDER.map((status) => ({
     status,
     items: dated
@@ -178,7 +181,6 @@ export default async function GanttPage({
         minHeight: 0,
       }}
     >
-      {/* Summary bar */}
       <div className="gantt-summary">
         <span className="mono gs-range">{rangeLabel}</span>
         <span className="gs-progress-wrap">
@@ -216,7 +218,7 @@ export default async function GanttPage({
                 color: "var(--text-4)",
               }}
             >
-              {dated.length} / {tasks.length}
+              {tasks.length}
             </span>
           </div>
           <div className="gantt-body">
@@ -265,7 +267,13 @@ export default async function GanttPage({
                     </span>
                     <span
                       className="truncate"
-                      style={{ flex: 1, minWidth: 0, color: "var(--text)" }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        color: "var(--text)",
+                        fontSize: "var(--fs-sm)",
+                      }}
+                      title={task.title}
                     >
                       {task.title}
                     </span>
@@ -288,10 +296,7 @@ export default async function GanttPage({
               <div
                 key={i}
                 className="gh-cell"
-                style={{
-                  width: 7 * DAY_W,
-                  position: "relative",
-                }}
+                style={{ width: 7 * DAY_W, position: "relative" }}
               >
                 <span>{w.label}</span>
                 {w.d.getDate() <= 7 && (
@@ -329,7 +334,7 @@ export default async function GanttPage({
                 >
                   <span className="gantt-group-line" />
                 </div>
-                {group.items.map(({ task, start, end }) => {
+                {group.items.map(({ task, start, end, synthetic }) => {
                   const { left, width: w } = posFor(start, end);
                   const late = isLate({
                     status: task.status,
@@ -337,23 +342,30 @@ export default async function GanttPage({
                   });
                   const statusCls =
                     STATUS_CLS[task.status as TaskStatus] ?? "todo";
+                  const bg = task.color ?? undefined;
                   return (
                     <Link
                       key={task.id}
                       href={`?task=${task.id}`}
                       scroll={false}
                       className="gantt-track"
-                      style={{
-                        display: "block",
-                        textDecoration: "none",
-                      }}
+                      style={{ display: "block", textDecoration: "none" }}
                     >
                       <div
-                        className={`gantt-bar ${statusCls}${late ? " late" : ""}`}
-                        style={{ insetInlineStart: left, width: w }}
-                        title={`${task.code} · ${task.title}`}
+                        className={`gantt-bar ${statusCls}${late ? " late" : ""}${synthetic ? " synthetic" : ""}`}
+                        style={{
+                          insetInlineStart: left,
+                          width: w,
+                          ...(bg
+                            ? {
+                                background: bg,
+                                boxShadow: "0 1px 0 0 rgba(0,0,0,0.25)",
+                              }
+                            : null),
+                        }}
+                        title={`${task.code} · ${task.title}${synthetic ? (locale === "ar" ? " (تقديرية)" : " (estimated)") : ""}`}
                       >
-                        {w > 56 && (
+                        {w > 42 && (
                           <span className="truncate gantt-bar-label">
                             {task.title}
                           </span>
@@ -374,7 +386,6 @@ export default async function GanttPage({
         </div>
       </div>
 
-      {/* Footer legend */}
       <div className="gantt-legend">
         {STATUS_ORDER.map((s) => (
           <span key={s} className="gantt-legend-item">
@@ -395,6 +406,15 @@ export default async function GanttPage({
             }}
           />
           {locale === "ar" ? "متأخرة" : "Late"}
+        </span>
+        <span className="gantt-legend-item">
+          <span
+            className="gantt-legend-swatch"
+            style={{
+              background: "repeating-linear-gradient(45deg, var(--text-4) 0 3px, transparent 3px 6px)",
+            }}
+          />
+          {locale === "ar" ? "تقديرية" : "Estimated"}
         </span>
       </div>
     </div>

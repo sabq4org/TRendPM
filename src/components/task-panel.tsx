@@ -14,6 +14,8 @@ import {
   addComment,
   deleteComment,
   updateEstimate,
+  updateTaskColor,
+  updateTaskDates,
 } from "@/app/actions/task-details";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import {
@@ -41,6 +43,7 @@ type TaskDetail = {
   actualHours: string | null;
   tags: string[];
   projectId: string;
+  color: string | null;
 };
 
 type Assignee = {
@@ -276,12 +279,24 @@ export default function TaskPanel({
                 onChanged={reload}
               />
             </SideRow>
+            <SideRow k={locale === "ar" ? "البدء" : "Start"}>
+              <DateEditor
+                taskId={data.task.id}
+                field="startDate"
+                initial={data.task.startDate}
+                locale={locale}
+              />
+            </SideRow>
             <SideRow k={dict.due}>
               <DateEditor
                 taskId={data.task.id}
+                field="dueDate"
                 initial={data.task.dueDate}
                 locale={locale}
               />
+            </SideRow>
+            <SideRow k={locale === "ar" ? "اللون" : "Color"}>
+              <ColorPicker task={data.task} onChanged={reload} />
             </SideRow>
             <SideRow k={dict.progress}>
               <ProgressEditor task={data.task} />
@@ -493,10 +508,12 @@ function PrioritySelector({ task, dict }: { task: TaskDetail; dict: Dictionary }
 
 function DateEditor({
   taskId,
+  field,
   initial,
   locale,
 }: {
   taskId: string;
+  field: "startDate" | "dueDate";
   initial: string | null;
   locale: Locale;
 }) {
@@ -507,7 +524,7 @@ function DateEditor({
 
   const save = (next: string) => {
     startTransition(async () => {
-      await updateTask({ taskId, dueDate: next || null });
+      await updateTaskDates({ taskId, [field]: next || null });
     });
   };
 
@@ -627,6 +644,126 @@ function EstimateEditor({
       >
         {hoursUnit}
       </span>
+    </span>
+  );
+}
+
+const TASK_COLOR_PALETTE: { name: string; value: string }[] = [
+  { name: "Sky", value: "#38BDF8" },
+  { name: "Indigo", value: "#818CF8" },
+  { name: "Violet", value: "#A78BFA" },
+  { name: "Pink", value: "#F472B6" },
+  { name: "Rose", value: "#FB7185" },
+  { name: "Orange", value: "#FB923C" },
+  { name: "Amber", value: "#FBBF24" },
+  { name: "Lime", value: "#A3E635" },
+  { name: "Emerald", value: "#34D399" },
+  { name: "Teal", value: "#2DD4BF" },
+  { name: "Cyan", value: "#22D3EE" },
+  { name: "Slate", value: "#94A3B8" },
+];
+
+function ColorPicker({
+  task,
+  onChanged,
+}: {
+  task: TaskDetail;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const rootRef = useRef<HTMLSpanElement | null>(null);
+  const current = task.color;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const apply = (value: string | null) => {
+    startTransition(async () => {
+      await updateTaskColor({ taskId: task.id, color: value });
+      setOpen(false);
+      onChanged();
+    });
+  };
+
+  return (
+    <span ref={rootRef} style={{ position: "relative", display: "inline-flex" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={isPending}
+        title={current ?? "Default"}
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 6,
+          background: current ?? "transparent",
+          backgroundImage: current
+            ? undefined
+            : "repeating-linear-gradient(45deg,var(--border) 0 4px,transparent 4px 8px)",
+          border: "1px solid var(--border)",
+          cursor: "pointer",
+        }}
+      />
+      {open && (
+        <div
+          className="popover"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            insetInlineEnd: 0,
+            zIndex: 50,
+            background: "var(--panel)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,.35)",
+            width: 176,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: 6,
+            }}
+          >
+            {TASK_COLOR_PALETTE.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => apply(c.value)}
+                title={c.name}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 5,
+                  background: c.value,
+                  border:
+                    current?.toLowerCase() === c.value.toLowerCase()
+                      ? "2px solid var(--text)"
+                      : "1px solid rgba(255,255,255,.15)",
+                  cursor: "pointer",
+                }}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => apply(null)}
+            style={{ marginTop: 8, width: "100%" }}
+          >
+            Reset
+          </button>
+        </div>
+      )}
     </span>
   );
 }

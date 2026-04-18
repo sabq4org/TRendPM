@@ -260,3 +260,52 @@ export async function updateEstimate(
   revalidatePath(`/projects/${t.projectId}`, "layout");
   return { ok: true };
 }
+
+// ─── updateTaskDates ─────────────────────────────────────────────────────────
+const UpdateTaskDatesSchema = z.object({
+  taskId: z.string().uuid(),
+  startDate: z.string().nullable().optional(),
+  dueDate: z.string().nullable().optional(),
+});
+
+export async function updateTaskDates(
+  input: z.infer<typeof UpdateTaskDatesSchema>
+) {
+  const parsed = UpdateTaskDatesSchema.parse(input);
+  const user = await requireUser();
+  const t = await assertTaskInWorkspace(parsed.taskId, user.workspaceId);
+
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if (parsed.startDate !== undefined) updates.startDate = parsed.startDate || null;
+  if (parsed.dueDate !== undefined) updates.dueDate = parsed.dueDate || null;
+
+  await db.update(tasks).set(updates).where(eq(tasks.id, parsed.taskId));
+
+  revalidatePath(`/projects/${t.projectId}`, "layout");
+  return { ok: true };
+}
+
+// ─── updateTaskColor ─────────────────────────────────────────────────────────
+const UpdateTaskColorSchema = z.object({
+  taskId: z.string().uuid(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a 6-digit hex like #38BDF8.")
+    .nullable(),
+});
+
+export async function updateTaskColor(
+  input: z.infer<typeof UpdateTaskColorSchema>
+) {
+  const { taskId, color } = UpdateTaskColorSchema.parse(input);
+  const user = await requireUser();
+  const t = await assertTaskInWorkspace(taskId, user.workspaceId);
+
+  await db
+    .update(tasks)
+    .set({ color, updatedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+
+  revalidatePath(`/projects/${t.projectId}`, "layout");
+  return { ok: true };
+}

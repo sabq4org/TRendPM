@@ -184,6 +184,7 @@ export const tasks = pgTable(
     actualHours: numeric("actual_hours", { precision: 8, scale: 2 }),
     position: integer("position").notNull().default(0),
     tags: text("tags").array().notNull().default(sql`'{}'`),
+    color: text("color"),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
