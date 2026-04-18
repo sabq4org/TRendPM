@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { getTaskById, getCommentsForTask, getProjectMembers } from "@/lib/db/queries";
+import { getTaskById, getCommentsForTask } from "@/lib/db/queries";
 import { db } from "@/lib/db";
-import { taskAssignees, users, projects, checklistItems } from "@/lib/db/schema";
-import { and, asc, eq } from "drizzle-orm";
+import {
+  taskAssignees,
+  users,
+  projects,
+  checklistItems,
+  workspaceMembers,
+} from "@/lib/db/schema";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 export async function GET(
   _req: Request,
@@ -18,7 +24,24 @@ export async function GET(
   const [commentsList, members, assigneeRows, projRows, checklistRows] =
     await Promise.all([
       getCommentsForTask(id),
-      getProjectMembers(task.projectId),
+      db
+        .select({
+          id: users.id,
+          name: users.name,
+          nameEn: users.nameEn,
+          initials: users.initials,
+          hue: users.hue,
+          role: workspaceMembers.role,
+        })
+        .from(workspaceMembers)
+        .innerJoin(users, eq(workspaceMembers.userId, users.id))
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, user.workspaceId),
+            isNull(users.deletedAt),
+            isNull(workspaceMembers.deletedAt)
+          )
+        ),
       db
         .select({
           userId: taskAssignees.userId,

@@ -13,20 +13,12 @@ export default async function SettingsPage() {
   ]);
   const dict = getDictionary(locale);
 
+  const isAdmin = user.workspaceRole === "admin";
+
   return (
     <div className="scroll">
       <div className="subhead">
         <h1>{dict.settings}</h1>
-        {user.workspaceRole === "admin" && (
-          <div style={{ marginInlineStart: "auto", display: "flex", gap: 8 }}>
-            <a href="/settings/members" className="btn sm">
-              {locale === "ar" ? "الأعضاء" : "Members"}
-            </a>
-            <a href="/settings/teams" className="btn sm">
-              {locale === "ar" ? "الفرق" : "Teams"}
-            </a>
-          </div>
-        )}
       </div>
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16, maxWidth: 720 }}>
         <div className="panel">
@@ -43,8 +35,33 @@ export default async function SettingsPage() {
                 {user.email}
               </div>
               <div style={{ color: "var(--text-4)", fontSize: "var(--fs-xs)" }}>
-                {user.role}
+                {locale === "ar" ? "دور مساحة العمل:" : "Workspace role:"} {user.workspaceRole}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-head">
+            <h3>{locale === "ar" ? "مساحة العمل" : "Workspace"}</h3>
+          </div>
+          <div style={{ padding: 16, display: "grid", gap: 12 }}>
+            <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-2)" }}>
+              {isAdmin
+                ? locale === "ar"
+                  ? "إدارة الأعضاء والفرق في مساحة العمل."
+                  : "Manage members and teams in your workspace."
+                : locale === "ar"
+                  ? "للإدارة تحتاج صلاحية مدير."
+                  : "You need admin access to manage these."}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <a className="btn" href="/settings/members">
+                {locale === "ar" ? "الأعضاء" : "Members"}
+              </a>
+              <a className="btn" href="/settings/teams">
+                {locale === "ar" ? "الفرق" : "Teams"}
+              </a>
             </div>
           </div>
         </div>

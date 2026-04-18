@@ -139,7 +139,18 @@ export default function Sidebar({
       </div>
 
       <div className="sb-section">
-        <Item href="/settings" icon="settings" label={dict.settings} active={isActive("/settings")} />
+        <Item
+          href="/settings/members"
+          icon="team"
+          label={locale === "ar" ? "الأعضاء" : "Members"}
+          active={isActive("/settings/members")}
+        />
+        <Item
+          href="/settings"
+          icon="settings"
+          label={dict.settings}
+          active={isActive("/settings", true)}
+        />
       </div>
     </aside>
   );
