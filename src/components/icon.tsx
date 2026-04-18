@@ -7,7 +7,7 @@ type IconName =
   | "calendar" | "clock" | "comment" | "paperclip" | "link" | "user"
   | "flag" | "check" | "dots" | "moon" | "sun" | "bell" | "kanban" | "list"
   | "gantt" | "arrowRight" | "alert" | "archive" | "globe" | "lang" | "zap"
-  | "tag" | "trend" | "command";
+  | "tag" | "trend" | "command" | "menu";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: <><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></>,
@@ -53,6 +53,7 @@ const paths: Record<IconName, React.ReactNode> = {
   tag: <><path d="M20 12l-8 8-8-8V4h8z"/><circle cx="8" cy="8" r="1"/></>,
   trend: <><path d="M3 17l6-6 4 4 7-8"/><path d="M14 7h6v6"/></>,
   command: <><path d="M9 3a3 3 0 100 6h6a3 3 0 100-6v12a3 3 0 11-6 0V9a3 3 0 11-6 0 3 3 0 106 0"/></>,
+  menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
 };
 
 export type IconProps = {

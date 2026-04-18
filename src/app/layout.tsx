@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getLocale, getTheme, getAccent } from "@/lib/preferences";
 import { dirFor } from "@/lib/i18n";
@@ -6,6 +6,16 @@ import { dirFor } from "@/lib/i18n";
 export const metadata: Metadata = {
   title: "Trend PM",
   description: "منصة إدارة المشاريع والمهام — ترند",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
 };
 
 export default async function RootLayout({

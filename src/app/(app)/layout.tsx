@@ -1,5 +1,6 @@
 import Sidebar, { type SidebarProject, type SidebarTeam } from "@/components/shell/sidebar";
 import Topbar from "@/components/shell/topbar";
+import AppShell from "@/components/shell/app-shell";
 import { getCurrentUser } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n";
 import { getLocale, getTheme } from "@/lib/preferences";
@@ -73,24 +74,27 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     );
 
   return (
-    <div className="app">
-      <Topbar
-        locale={locale}
-        theme={theme}
-        dict={dict}
-        currentUser={user}
-        crumbs={[]}
-      />
-      <Sidebar
-        locale={locale}
-        dict={dict}
-        projects={sidebarProjects}
-        teams={sidebarTeams}
-        myTasksCount={myTasksOpen}
-      />
-      <main className="main" style={{ position: "relative" }}>
-        {children}
-      </main>
-    </div>
+    <AppShell
+      topbar={
+        <Topbar
+          locale={locale}
+          theme={theme}
+          dict={dict}
+          currentUser={user}
+          crumbs={[]}
+        />
+      }
+      sidebar={
+        <Sidebar
+          locale={locale}
+          dict={dict}
+          projects={sidebarProjects}
+          teams={sidebarTeams}
+          myTasksCount={myTasksOpen}
+        />
+      }
+    >
+      {children}
+    </AppShell>
   );
 }
